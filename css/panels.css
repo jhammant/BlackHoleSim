@@ -1,0 +1,167 @@
+/* Panel chrome, tabs, and content areas */
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.tab-btn.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+  background: var(--bg-panel);
+}
+
+/* Tab content */
+.tab-content {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+/* Plot area */
+.plot-area {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.plot-area canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Slider panel below plot */
+.slider-panel {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-dim);
+  overflow-y: auto;
+  max-height: 240px;
+}
+
+.slider-panel h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+/* Dashboard overlay */
+#dashboard {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(5, 5, 16, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.8;
+  z-index: 5;
+  pointer-events: none;
+  min-width: 180px;
+}
+
+#dashboard .dash-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+#dashboard .dash-label {
+  color: var(--text-dim);
+}
+
+#dashboard .dash-value {
+  color: var(--cyan);
+  font-weight: 500;
+  text-align: right;
+}
+
+#dashboard .dash-unit {
+  color: var(--text-dim);
+  font-size: 10px;
+  margin-left: 3px;
+}
+
+/* Encounter info callouts */
+.encounter-info {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(5, 5, 16, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 12px;
+  max-width: 280px;
+  z-index: 5;
+}
+
+.encounter-info h4 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.encounter-info p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+/* Frame indicator */
+.frame-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(5, 5, 16, 0.8);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  z-index: 5;
+  pointer-events: none;
+}

@@ -1,0 +1,255 @@
+// App bootstrap — event bus, parameter state, animation loop
+
+import { DEFAULTS } from './physics/constants.js';
+import { initScene, getScene, getCamera, registerAnimationCallback, animate } from './viz/scene3d.js';
+import { createSMBH, updateSMBH } from './viz/smbh-object.js';
+import { createBowShockMesh, updateBowShockMesh } from './viz/bowshock-mesh.js';
+import { createParticles, updateParticles, setParticleParams } from './viz/particles.js';
+import { createWakeTrail, updateWakeTrail } from './viz/wake-trail.js';
+import { createEncounterScene, setEncounterActive, setEncounterParams, updateEncounter } from './viz/planetary-encounter.js';
+import { initPVDiagram, updatePVDiagram } from './plots/pv-diagram.js';
+import { initWakeProfile, updateWakeProfile } from './plots/wake-profile.js';
+import { initSchematic, updateSchematic, animateSchematic } from './plots/schematic.js';
+import { createSliderGroup, PV_SLIDERS, WAKE_SLIDERS, ENCOUNTER_SLIDERS } from './ui/sliders.js';
+import { initDashboard, updateDashboard } from './ui/dashboard.js';
+import { initTabs } from './ui/tabs.js';
+import { standoffFromRc } from './physics/energetics.js';
+
+// Global parameter state
+const state = { ...DEFAULTS };
+let lastTime = 0;
+let encounterActive = false;
+let schematicActive = false;
+
+export async function init() {
+  // Initialize tabs
+  initTabs();
+
+  // Initialize 3D scene
+  const sceneContainer = document.getElementById('scene-container');
+  initScene(sceneContainer);
+
+  const scene = getScene();
+  const camera = getCamera();
+
+  // Create 3D objects
+  createSMBH(scene);
+  createBowShockMesh(scene, state.R_0);
+  createParticles(scene);
+  createWakeTrail(scene, state);
+
+  // Create encounter scene (hidden by default)
+  const encounterInfo = document.getElementById('encounter-info');
+  createEncounterScene(scene, encounterInfo);
+
+  // Initialize plots
+  const pvCanvas = document.getElementById('pv-canvas');
+  const wakeCanvas = document.getElementById('wake-canvas');
+  const schematicCanvas = document.getElementById('schematic-canvas');
+  if (pvCanvas) await initPVDiagram(pvCanvas);
+  if (wakeCanvas) await initWakeProfile(wakeCanvas);
+  if (schematicCanvas) {
+    try { initSchematic(schematicCanvas); } catch (e) { console.warn('Schematic init deferred:', e); }
+  }
+
+  // Initialize dashboard
+  initDashboard();
+
+  // Setup sliders
+  setupSliders();
+
+  // Setup toolbar
+  setupToolbar();
+
+  // Register animation callback
+  registerAnimationCallback((time) => {
+    const dt = lastTime ? time - lastTime : 16;
+    lastTime = time;
+
+    updateSMBH(time, camera);
+    updateBowShockMesh(time, state.R_0);
+    updateParticles(time, dt);
+    updateWakeTrail(time);
+
+    if (encounterActive) {
+      updateEncounter(time, camera);
+    }
+
+    // Animate schematic if visible
+    if (schematicActive) {
+      animateSchematic(time);
+    }
+  });
+
+  // Start animation
+  animate(0);
+
+  // Update header velocity readout
+  updateVelocityReadout(state.v_star);
+}
+
+function setupSliders() {
+  // PV sliders
+  const pvSliderPanel = document.getElementById('pv-sliders');
+  if (pvSliderPanel) {
+    createSliderGroup(pvSliderPanel, PV_SLIDERS, (param, value) => {
+      state[param] = value;
+      updatePVDiagram(state);
+      updateDashboard(state);
+      if (param === 'v_star') {
+        setParticleParams({ v_star: value });
+        updateWakeProfile(state);
+        updateVelocityReadout(value);
+      }
+      if (param === 'R_c') {
+        state.R_0 = standoffFromRc(value);
+        setParticleParams({ R_0: state.R_0 });
+      }
+    });
+  }
+
+  // Wake sliders
+  const wakeSliderPanel = document.getElementById('wake-sliders');
+  if (wakeSliderPanel) {
+    createSliderGroup(wakeSliderPanel, WAKE_SLIDERS, (param, value) => {
+      state[param] = value;
+      updateWakeProfile(state);
+      updateDashboard(state);
+      if (param === 'v_star') {
+        setParticleParams({ v_star: value });
+        updatePVDiagram(state);
+        updateVelocityReadout(value);
+      }
+      if (param === 'R_c') {
+        state.R_0 = standoffFromRc(value);
+        setParticleParams({ R_0: state.R_0 });
+      }
+    });
+  }
+
+  // Schematic sliders
+  const schematicSliderPanel = document.getElementById('schematic-sliders');
+  if (schematicSliderPanel) {
+    const SCHEMATIC_SLIDERS = [
+      { label: 'v★', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s' },
+      { label: 'R₀', param: 'R_0', min: 0.3, max: 3.0, step: 0.1, value: 1.2, unit: 'kpc' },
+      { label: 'R_c', param: 'R_c', min: 0.5, max: 5.0, step: 0.1, value: 1.8, unit: 'kpc' },
+    ];
+    createSliderGroup(schematicSliderPanel, SCHEMATIC_SLIDERS, (param, value) => {
+      state[param] = value;
+      if (param === 'R_c') {
+        state.R_0 = standoffFromRc(value);
+      }
+      updateSchematic(state);
+      updateDashboard(state);
+    });
+  }
+
+  // Encounter sliders
+  const encSliderPanel = document.getElementById('encounter-sliders');
+  if (encSliderPanel) {
+    createSliderGroup(encSliderPanel, ENCOUNTER_SLIDERS, (param, value) => {
+      if (param === 'enc_mass') {
+        setEncounterParams({ mass: Math.pow(10, value) });
+      } else if (param === 'enc_vel') {
+        setEncounterParams({ velocity: value });
+      } else if (param === 'enc_dist') {
+        setEncounterParams({ closestApproach: value });
+      }
+    });
+
+    // Timeline slider
+    const timelineRow = document.createElement('div');
+    timelineRow.className = 'timeline-slider';
+    timelineRow.innerHTML = `
+      <div class="slider-row">
+        <label style="min-width:60px">Timeline</label>
+        <input type="range" min="0" max="1" step="0.005" value="0.5" id="timeline-slider">
+        <span class="slider-value" id="timeline-value">Closest</span>
+      </div>
+    `;
+    encSliderPanel.appendChild(timelineRow);
+
+    const tlSlider = document.getElementById('timeline-slider');
+    const tlValue = document.getElementById('timeline-value');
+    tlSlider.addEventListener('input', () => {
+      const v = parseFloat(tlSlider.value);
+      setEncounterParams({ timeline: v });
+      const phases = ['Approach', 'Disruption', 'Closest', 'Slingshot', 'Aftermath'];
+      tlValue.textContent = phases[Math.min(4, Math.floor(v * 5))];
+    });
+
+    // Mode toggle
+    const modeRow = document.createElement('div');
+    modeRow.className = 'slider-row';
+    modeRow.style.marginTop = '8px';
+    modeRow.innerHTML = `
+      <label style="min-width:60px">Mode</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-mode="flyby">Near Miss</button>
+        <button class="toggle-btn" data-mode="direct">Direct Hit</button>
+      </div>
+    `;
+    encSliderPanel.appendChild(modeRow);
+
+    modeRow.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modeRow.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setEncounterParams({ mode: btn.dataset.mode });
+      });
+    });
+  }
+}
+
+function setupToolbar() {
+  // Frame toggle
+  const frameToggles = document.querySelectorAll('#frame-toggle .toggle-btn');
+  frameToggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      frameToggles.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Frame mode switching would affect particle simulation
+    });
+  });
+
+  // Speed slider
+  const speedSlider = document.getElementById('speed-slider');
+  if (speedSlider) {
+    speedSlider.addEventListener('input', () => {
+      // Speed control for animation
+    });
+  }
+
+  // Vectors checkbox
+  const vectorsToggle = document.getElementById('vectors-toggle');
+  if (vectorsToggle) {
+    vectorsToggle.addEventListener('change', () => {
+      // Toggle velocity arrows
+    });
+  }
+}
+
+// Tab change handler — activate/deactivate encounter mode
+window.addEventListener('tabchange', (e) => {
+  const tab = e.detail.tab;
+  encounterActive = (tab === 'tab-encounter');
+  schematicActive = (tab === 'tab-schematic');
+  setEncounterActive(encounterActive);
+
+  // Resize plots on tab switch
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, 50);
+});
+
+function updateVelocityReadout(v) {
+  const el = document.getElementById('velocity-value');
+  if (el) {
+    el.textContent = `${v.toFixed(0)} km/s`;
+  }
+  const fracEl = document.getElementById('velocity-frac');
+  if (fracEl) {
+    fracEl.textContent = `(${(v / 299792 * 100).toFixed(2)}% c)`;
+  }
+}

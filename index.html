@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RBH-1: Runaway Supermassive Black Hole</title>
+  <meta name="description" content="Interactive visualization of the first confirmed runaway supermassive black hole (Van Dokkum et al. 2026). Explore bow shock physics, position-velocity models, and planetary encounter scenarios.">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/panels.css">
+  <link rel="stylesheet" href="css/controls.css">
+
+  <!-- Three.js from CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <h1><span class="accent">RBH-1</span> &mdash; Runaway Supermassive Black Hole</h1>
+      <div class="velocity-readout">
+        v = <span class="value" id="velocity-value">954 km/s</span>
+        <span class="text-dim" id="velocity-frac">(0.32% c)</span>
+        <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" class="paper-link" title="Van Dokkum et al. 2026, ApJL 998:L27">Paper</a>
+      </div>
+    </header>
+
+    <!-- 3D Scene -->
+    <div id="scene-container">
+      <div class="frame-indicator" id="frame-label">BH Rest Frame</div>
+      <div id="dashboard"></div>
+    </div>
+
+    <!-- Right Panel -->
+    <div id="right-panel">
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tab-pv">PV Diagram</button>
+        <button class="tab-btn" data-tab="tab-wake">Wake</button>
+        <button class="tab-btn" data-tab="tab-schematic">Schematic</button>
+        <button class="tab-btn" data-tab="tab-encounter">Encounter</button>
+      </div>
+
+      <!-- PV Diagram Tab -->
+      <div class="tab-content active" id="tab-pv">
+        <div class="plot-area">
+          <canvas id="pv-canvas"></canvas>
+        </div>
+        <div class="slider-panel" id="pv-sliders">
+          <h3>PV Model Parameters (Eq 1-8)</h3>
+        </div>
+      </div>
+
+      <!-- Wake Profile Tab -->
+      <div class="tab-content" id="tab-wake">
+        <div class="plot-area">
+          <canvas id="wake-canvas"></canvas>
+        </div>
+        <div class="slider-panel" id="wake-sliders">
+          <h3>Wake Model (Eq 19) &amp; Shock (Eq 13)</h3>
+        </div>
+      </div>
+
+      <!-- Schematic Tab -->
+      <div class="tab-content" id="tab-schematic">
+        <div class="plot-area">
+          <canvas id="schematic-canvas"></canvas>
+        </div>
+        <div class="slider-panel" id="schematic-sliders">
+          <h3>Bow Shock Geometry</h3>
+        </div>
+      </div>
+
+      <!-- Encounter Tab -->
+      <div class="tab-content" id="tab-encounter">
+        <div class="plot-area" style="position: relative;">
+          <div id="encounter-info" class="encounter-info">
+            <h4>PLANETARY ENCOUNTER</h4>
+            <p>Adjust timeline to see what happens when a 20 million solar mass black hole barrels through a solar system at 954 km/s.</p>
+          </div>
+          <canvas id="encounter-canvas" style="display:none;"></canvas>
+        </div>
+        <div class="slider-panel" id="encounter-sliders">
+          <h3>Encounter Parameters</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <div class="toolbar-group" id="frame-toggle">
+        <span class="toolbar-label">Frame:</span>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-frame="bh">BH</button>
+          <button class="toggle-btn" data-frame="cgm">CGM</button>
+        </div>
+      </div>
+
+      <div class="toolbar-sep"></div>
+
+      <div class="toolbar-group">
+        <span class="toolbar-label">Speed:</span>
+        <input type="range" class="toolbar-slider" id="speed-slider" min="0" max="3" step="0.1" value="1">
+      </div>
+
+      <div class="toolbar-sep"></div>
+
+      <label class="checkbox-toggle">
+        <input type="checkbox" id="vectors-toggle">
+        <span>Vectors</span>
+      </label>
+
+      <div style="flex:1;"></div>
+
+      <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" class="paper-link-footer mono" style="font-size:10px;">
+        Van Dokkum et al. 2026, ApJL 998:L27
+      </a>
+    </div>
+  </div>
+
+  <!-- App Bootstrap -->
+  <script type="module">
+    import { init } from './js/app.js';
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
