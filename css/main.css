@@ -387,6 +387,16 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   .tab-nav { padding: 6px 10px; }
   .tab-nav-btn { padding: 5px 10px; font-size: 11px; }
 
+  /* Fix: make tab content scrollable so schematic doesn't overlap tab-nav */
+  .tab-content.active { overflow-y: auto; }
+
+  /* Fix: fixed height for plot area so canvases render legibly instead of
+     being crushed to 0px by competing flex siblings */
+  .plot-area { flex: none; height: 200px; }
+
+  /* Constrain slider panel to leave room for tab-nav */
+  .slider-panel { max-height: 160px; }
+
   /* Key Facts overlay: shrink on mobile */
   #easy-dashboard {
     bottom: 8px;
@@ -409,10 +419,13 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   #header { padding: 0 10px; }
   #header h1 { font-size: 13px; }
   .tab-btn { font-size: 9px; padding: 6px 4px; letter-spacing: 0; }
-  .slider-panel { padding: 8px 10px; }
+  .slider-panel { padding: 8px 10px; max-height: 120px; }
   .splash-title { font-size: 48px; }
   .splash-content { padding: 20px; }
   .splash-fact { font-size: 13px; }
+
+  /* Smaller plot area on phones */
+  .plot-area { height: 160px; }
 
   /* Hide Key Facts on small phones — too much canvas coverage */
   #easy-dashboard { display: none !important; }
