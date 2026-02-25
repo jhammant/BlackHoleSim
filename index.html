@@ -46,6 +46,7 @@
         <button class="tab-btn active" data-tab="tab-pv">PV Diagram</button>
         <button class="tab-btn" data-tab="tab-wake">Wake</button>
         <button class="tab-btn" data-tab="tab-schematic">Schematic</button>
+        <button class="tab-btn" data-tab="tab-planetview">Sky View</button>
         <button class="tab-btn" data-tab="tab-encounter">Encounter</button>
       </div>
 
@@ -76,6 +77,16 @@
         </div>
         <div class="slider-panel" id="schematic-sliders">
           <h3>Bow Shock Geometry</h3>
+        </div>
+      </div>
+
+      <!-- Planet Sky View Tab -->
+      <div class="tab-content" id="tab-planetview">
+        <div class="plot-area">
+          <canvas id="planetview-canvas"></canvas>
+        </div>
+        <div class="slider-panel" id="planetview-sliders">
+          <h3>Observer Distance</h3>
         </div>
       </div>
 

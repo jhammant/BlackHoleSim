@@ -10,6 +10,7 @@ import { createEncounterScene, setEncounterActive, setEncounterParams, updateEnc
 import { initPVDiagram, updatePVDiagram } from './plots/pv-diagram.js';
 import { initWakeProfile, updateWakeProfile } from './plots/wake-profile.js';
 import { initSchematic, updateSchematic, animateSchematic } from './plots/schematic.js';
+import { initPlanetView, updatePlanetView, animatePlanetView } from './plots/planetview.js';
 import { createSliderGroup, PV_SLIDERS, WAKE_SLIDERS, ENCOUNTER_SLIDERS } from './ui/sliders.js';
 import { initDashboard, updateDashboard } from './ui/dashboard.js';
 import { initTabs } from './ui/tabs.js';
@@ -20,6 +21,7 @@ const state = { ...DEFAULTS };
 let lastTime = 0;
 let encounterActive = false;
 let schematicActive = false;
+let planetViewActive = false;
 
 export async function init() {
   // Initialize tabs
@@ -51,6 +53,10 @@ export async function init() {
   if (schematicCanvas) {
     try { initSchematic(schematicCanvas); } catch (e) { console.warn('Schematic init deferred:', e); }
   }
+  const planetviewCanvas = document.getElementById('planetview-canvas');
+  if (planetviewCanvas) {
+    try { initPlanetView(planetviewCanvas); } catch (e) { console.warn('PlanetView init deferred:', e); }
+  }
 
   // Initialize dashboard
   initDashboard();
@@ -75,10 +81,8 @@ export async function init() {
       updateEncounter(time, camera);
     }
 
-    // Animate schematic if visible
-    if (schematicActive) {
-      animateSchematic(time);
-    }
+    if (schematicActive) animateSchematic(time);
+    if (planetViewActive) animatePlanetView(time);
   });
 
   // Start animation
@@ -142,6 +146,19 @@ function setupSliders() {
       }
       updateSchematic(state);
       updateDashboard(state);
+    });
+  }
+
+  // Planet view sliders
+  const pvSliderPanel2 = document.getElementById('planetview-sliders');
+  if (pvSliderPanel2) {
+    const PV_VIEW_SLIDERS = [
+      { label: 'Dist', param: 'distance', min: 1, max: 5000, step: 10, value: 500, unit: 'ly',
+        format: v => v < 1 ? `${(v*3.26).toFixed(1)} pc` : `${v} ly` },
+      { label: 'v★', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s' },
+    ];
+    createSliderGroup(pvSliderPanel2, PV_VIEW_SLIDERS, (param, value) => {
+      updatePlanetView({ [param]: value });
     });
   }
 
@@ -235,6 +252,7 @@ window.addEventListener('tabchange', (e) => {
   const tab = e.detail.tab;
   encounterActive = (tab === 'tab-encounter');
   schematicActive = (tab === 'tab-schematic');
+  planetViewActive = (tab === 'tab-planetview');
   setEncounterActive(encounterActive);
 
   // Resize plots on tab switch
