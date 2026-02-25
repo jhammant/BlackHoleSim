@@ -51,8 +51,8 @@
           <div class="splash-fact"><span class="fact-num">200,000 light-years</span> <span class="fact-text">trail of newborn stars behind it</span></div>
           <div class="splash-fact"><span class="fact-num">Kicked out</span> <span class="fact-text">of its own galaxy by colliding black holes</span></div>
         </div>
-        <button id="splash-enter" class="splash-btn">Explore</button>
-        <div class="splash-credit">Based on Van Dokkum et al. 2026 &mdash; discovered with JWST</div>
+        <button id="splash-enter" class="splash-btn" onclick="document.getElementById('intro-splash').classList.add('hidden');setTimeout(()=>document.getElementById('intro-splash').style.display='none',700)">Explore</button>
+        <div class="splash-credit">Based on <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;">Van Dokkum et al. 2026</a> &mdash; discovered with JWST</div>
       </div>
     </div>
 
