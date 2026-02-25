@@ -201,6 +201,14 @@
   cursor: pointer;
 }
 
+/* Toolbar speed label */
+.toolbar-speed-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  min-width: 35px;
+}
+
 /* Toolbar separator */
 .toolbar-sep {
   width: 1px;

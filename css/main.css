@@ -24,7 +24,7 @@
 
   --text-primary: #e0e0f0;
   --text-secondary: #8888aa;
-  --text-dim: #555570;
+  --text-dim: #666688;
   --text-accent: var(--cyan);
 
   --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
@@ -199,8 +199,9 @@ html, body {
 /* Easy/Complex mode visibility */
 body.mode-easy .complex-only { display: none !important; }
 body.mode-complex .easy-only { display: none !important; }
-body.mode-easy #dashboard { display: none; }
-body.mode-easy #frame-label { display: none; }
+body.mode-easy #dashboard { display: none !important; }
+body.mode-easy #frame-label { display: none !important; }
+body.mode-complex #easy-dashboard { display: none !important; }
 
 /* Intro splash */
 #intro-splash {
@@ -231,7 +232,22 @@ body.mode-easy #frame-label { display: none; }
 .splash-subtitle {
   font-size: 18px;
   color: var(--text-secondary);
-  margin-bottom: 36px;
+  margin-bottom: 12px;
+}
+
+.splash-tagline {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 460px;
+  margin: 0 auto 28px;
+}
+
+.splash-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .splash-facts {
@@ -319,6 +335,26 @@ body.mode-easy #frame-label { display: none; }
   vertical-align: middle;
 }
 
+/* Focus styles for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px var(--cyan-glow);
+}
+
+input[type="range"]:focus-visible {
+  outline: none;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--cyan-glow);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   #app {
@@ -344,4 +380,19 @@ body.mode-easy #frame-label { display: none; }
     --header-height: 40px;
     --toolbar-height: 38px;
   }
+  #header h1 #title-text { display: none; }
+  .tab-btn { font-size: 10px; padding: 8px 6px; }
+  .easy-annotation { font-size: 12px; padding: 8px 10px; }
+  .tab-nav { padding: 6px 10px; }
+  .tab-nav-btn { padding: 5px 10px; font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  #header { padding: 0 10px; }
+  #header h1 { font-size: 13px; }
+  .tab-btn { font-size: 9px; padding: 6px 4px; letter-spacing: 0; }
+  .slider-panel { padding: 8px 10px; }
+  .splash-title { font-size: 48px; }
+  .splash-content { padding: 20px; }
+  .splash-fact { font-size: 13px; }
 }

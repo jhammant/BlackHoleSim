@@ -3,7 +3,9 @@
 import { computeDashboard } from '../physics/energetics.js';
 
 let dashEl = null;
+let easyDashEl = null;
 
+// Complex mode rows (original)
 const ROWS = [
   { key: 'M_BH', label: 'M_BH', format: v => `${(v / 1e7).toFixed(1)}×10⁷`, unit: 'M☉' },
   { key: 'R_0', label: 'R₀', format: v => v.toFixed(2), unit: 'kpc' },
@@ -15,19 +17,67 @@ const ROWS = [
   { key: 'v_frac_c', label: 'v/c', format: v => (v * 100).toFixed(2) + '%', unit: '' },
 ];
 
+// Easy mode rows — relatable comparisons
+const EASY_ROWS = [
+  {
+    key: 'v_star',
+    icon: '🚀',
+    format: v => {
+      const mph = (v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const bulletX = (v / 3.0).toFixed(0); // bullet ~3 km/s
+      return `<span class="easy-dash-value">${mph} mph</span><span class="easy-dash-comp">${bulletX}x faster than a bullet</span>`;
+    }
+  },
+  {
+    key: 'M_BH',
+    icon: '⚫',
+    format: v => {
+      const suns = (v / 1e6).toFixed(0);
+      const earths = (v * 333000).toExponential(1); // 1 sun = 333,000 earths
+      return `<span class="easy-dash-value">${suns} million Suns</span><span class="easy-dash-comp">Heavier than 6 trillion Earths</span>`;
+    }
+  },
+  {
+    key: 'mach',
+    icon: '💨',
+    format: v => {
+      return `<span class="easy-dash-value">Mach ${v.toFixed(0)}</span><span class="easy-dash-comp">${v.toFixed(0)}x the speed of sound in space gas</span>`;
+    }
+  },
+  {
+    key: 't_wake',
+    icon: '⏱️',
+    format: v => {
+      const dinosaurX = (v / 66).toFixed(0);
+      return `<span class="easy-dash-value">${v.toFixed(0)} million years old</span><span class="easy-dash-comp">${dinosaurX}x older than the dinosaur extinction</span>`;
+    }
+  },
+];
+
 export function initDashboard() {
   dashEl = document.getElementById('dashboard');
-  if (!dashEl) return;
-  renderDashboard(computeDashboard());
+
+  // Create easy mode dashboard
+  easyDashEl = document.createElement('div');
+  easyDashEl.id = 'easy-dashboard';
+  easyDashEl.className = 'easy-only';
+  const sceneContainer = document.getElementById('scene-container');
+  if (sceneContainer) sceneContainer.appendChild(easyDashEl);
+
+  if (!dashEl && !easyDashEl) return;
+  const data = computeDashboard();
+  renderDashboard(data);
+  renderEasyDashboard(data);
 }
 
 export function updateDashboard(params) {
-  if (!dashEl) return;
   const data = computeDashboard(params);
-  renderDashboard(data);
+  if (dashEl) renderDashboard(data);
+  if (easyDashEl) renderEasyDashboard(data);
 }
 
 function renderDashboard(data) {
+  if (!dashEl) return;
   dashEl.innerHTML = ROWS.map(row => {
     const val = data[row.key];
     if (val === undefined) return '';
@@ -36,4 +86,17 @@ function renderDashboard(data) {
       <span class="dash-value">${row.format(val)}<span class="dash-unit">${row.unit}</span></span>
     </div>`;
   }).join('');
+}
+
+function renderEasyDashboard(data) {
+  if (!easyDashEl) return;
+  easyDashEl.innerHTML = '<div class="easy-dash-title">Key Facts</div>' +
+    EASY_ROWS.map(row => {
+      const val = data[row.key];
+      if (val === undefined) return '';
+      return `<div class="easy-dash-row">
+        <span class="easy-dash-icon">${row.icon}</span>
+        <div class="easy-dash-content">${row.format(val)}</div>
+      </div>`;
+    }).join('');
 }

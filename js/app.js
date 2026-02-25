@@ -23,17 +23,24 @@ let encounterActive = false;
 let schematicActive = false;
 let planetViewActive = false;
 let easyMode = true; // Start in easy mode
+let animSpeed = 1; // Animation speed multiplier (0=paused, 1=normal, 3=fast)
 
 const FUN_FACTS = [
-  'This black hole is moving 300\u00d7 faster than a bullet',
-  'Its wake is longer than 2 Milky Way galaxies side by side',
+  'This black hole moves 300\u00d7 faster than a bullet',
+  'Its wake is longer than 2 Milky Way galaxies placed side by side',
   'It crosses an entire solar system in about 75 days',
-  'It weighs as much as 20 million Suns',
-  'The trail of stars it leaves behind is 200,000 light-years long',
+  'It weighs as much as 20 million Suns \u2014 or 6 trillion Earths',
+  'The trail of stars behind it is 200,000 light-years long',
   'It was kicked out of its galaxy by three colliding black holes',
-  'The gas in its bow shock is heated to 1,000,000\u00b0C',
-  'It\'s moving at 0.3% the speed of light \u2014 fast enough to cross the US in 5 seconds',
-  'First confirmed by JWST in 2026',
+  'The gas in its bow shock reaches 1,000,000\u00b0C \u2014 hotter than the Sun\'s surface',
+  'At 0.3% light speed, it could cross the US in 5 seconds',
+  'First confirmed by the James Webb Space Telescope in 2026',
+  'At this speed, it would reach the Moon from Earth in 6.5 minutes',
+  'It creates new stars as it moves \u2014 the wake glows with baby star clusters',
+  'Nothing can stop it. It will travel through space essentially forever',
+  'If it passed through our solar system, every planet would be flung into deep space',
+  'The bow shock in front of it is larger than most galaxies',
+  'It moves 70\u00d7 faster than the Space Station orbits Earth',
 ];
 
 export async function init() {
@@ -82,20 +89,22 @@ export async function init() {
 
   // Register animation callback
   registerAnimationCallback((time) => {
-    const dt = lastTime ? time - lastTime : 16;
+    const realDt = lastTime ? time - lastTime : 16;
     lastTime = time;
+    const dt = realDt * animSpeed;
+    const scaledTime = time * animSpeed;
 
-    updateSMBH(time, camera);
-    updateBowShockMesh(time, state.R_0);
-    updateParticles(time, dt);
-    updateWakeTrail(time);
+    updateSMBH(scaledTime, camera);
+    updateBowShockMesh(scaledTime, state.R_0);
+    updateParticles(scaledTime, dt);
+    updateWakeTrail(scaledTime);
 
     if (encounterActive) {
-      updateEncounter(time, camera);
+      updateEncounter(scaledTime, camera);
     }
 
-    if (schematicActive) animateSchematic(time);
-    if (planetViewActive) animatePlanetView(time);
+    if (schematicActive) animateSchematic(scaledTime);
+    if (planetViewActive) animatePlanetView(time); // planetview uses real time for auto-approach
   });
 
   // Start animation
@@ -171,9 +180,13 @@ function setupSliders() {
   const schematicSliderPanel = document.getElementById('schematic-sliders');
   if (schematicSliderPanel) {
     const SCHEMATIC_SLIDERS = [
-      { label: 'v★', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s' },
-      { label: 'R₀', param: 'R_0', min: 0.3, max: 3.0, step: 0.1, value: 1.2, unit: 'kpc' },
-      { label: 'R_c', param: 'R_c', min: 0.5, max: 5.0, step: 0.1, value: 1.8, unit: 'kpc' },
+      { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
+        tooltip: 'How fast the black hole moves through space',
+        easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+      { label: 'R₀', easyLabel: 'Standoff', param: 'R_0', min: 0.3, max: 3.0, step: 0.1, value: 1.2, unit: 'kpc',
+        tooltip: 'Distance from the black hole to the shock front' },
+      { label: 'R_c', easyLabel: 'Curve', param: 'R_c', min: 0.5, max: 5.0, step: 0.1, value: 1.8, unit: 'kpc',
+        tooltip: 'How curved the shock front is' },
     ];
     createSliderGroup(schematicSliderPanel, SCHEMATIC_SLIDERS, (param, value) => {
       state[param] = value;
@@ -189,9 +202,17 @@ function setupSliders() {
   const pvSliderPanel2 = document.getElementById('planetview-sliders');
   if (pvSliderPanel2) {
     const PV_VIEW_SLIDERS = [
-      { label: 'Dist', param: 'distance', min: 1, max: 5000, step: 10, value: 500, unit: 'ly',
-        format: v => v < 1 ? `${(v*3.26).toFixed(1)} pc` : `${v} ly` },
-      { label: 'v★', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s' },
+      { label: 'Dist', easyLabel: 'Distance', param: 'distance', min: 1, max: 5000, step: 10, value: 500, unit: 'ly',
+        tooltip: 'How far away the black hole is from your planet',
+        format: v => v < 1 ? `${(v*3.26).toFixed(1)} pc` : `${v} ly`,
+        easyFormat: v => {
+          if (v < 1) return 'Impact!';
+          if (v < 100) return `${v} ly (very close!)`;
+          return `${v.toLocaleString()} light-years`;
+        }},
+      { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
+        tooltip: 'Black hole approach speed',
+        easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
     ];
     createSliderGroup(pvSliderPanel2, PV_VIEW_SLIDERS, (param, value) => {
       updatePlanetView({ [param]: value });
@@ -266,29 +287,17 @@ function setupSliders() {
 }
 
 function setupToolbar() {
-  // Frame toggle
-  const frameToggles = document.querySelectorAll('#frame-toggle .toggle-btn');
-  frameToggles.forEach(btn => {
-    btn.addEventListener('click', () => {
-      frameToggles.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      // Frame mode switching would affect particle simulation
-    });
-  });
-
-  // Speed slider
+  // Speed slider — controls animation playback speed
   const speedSlider = document.getElementById('speed-slider');
+  const speedLabel = document.getElementById('speed-label');
   if (speedSlider) {
     speedSlider.addEventListener('input', () => {
-      // Speed control for animation
-    });
-  }
-
-  // Vectors checkbox
-  const vectorsToggle = document.getElementById('vectors-toggle');
-  if (vectorsToggle) {
-    vectorsToggle.addEventListener('change', () => {
-      // Toggle velocity arrows
+      animSpeed = parseFloat(speedSlider.value);
+      if (speedLabel) {
+        if (animSpeed === 0) speedLabel.textContent = 'Paused';
+        else if (animSpeed === 1) speedLabel.textContent = '1x';
+        else speedLabel.textContent = animSpeed.toFixed(1) + 'x';
+      }
     });
   }
 }

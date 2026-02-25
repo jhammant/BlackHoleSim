@@ -33,26 +33,29 @@
         <span id="velocity-human" class="easy-only" style="color:#ff8844;font-size:11px;margin-left:4px;">(2.1 million mph)</span>
         <span class="text-dim complex-only" id="velocity-frac">(0.32% c)</span>
         <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" class="paper-link" title="Van Dokkum et al. 2026, ApJL 998:L27">Paper</a>
-        <div class="toggle-group mode-toggle" id="mode-toggle" style="margin-left:12px;">
-          <button class="toggle-btn active" data-mode="easy">Easy</button>
-          <button class="toggle-btn" data-mode="complex">Complex</button>
+        <div class="toggle-group mode-toggle" id="mode-toggle" style="margin-left:12px;" aria-label="Difficulty mode">
+          <button class="toggle-btn active" data-mode="easy" aria-label="Easy mode - plain language">Easy</button>
+          <button class="toggle-btn" data-mode="complex" aria-label="Complex mode - full physics">Pro</button>
         </div>
       </div>
     </header>
 
-    <!-- Intro splash (easy mode, shown on first load) -->
+    <!-- Intro splash (shown on first load) -->
     <div id="intro-splash">
       <div class="splash-content">
         <div class="splash-title"><span class="accent">RBH-1</span></div>
         <div class="splash-subtitle">The First Runaway Supermassive Black Hole</div>
+        <div class="splash-tagline">A black hole so massive it was ejected from its own galaxy &mdash; and now it's tearing through space, leaving a trail of newborn stars in its wake.</div>
         <div class="splash-facts">
-          <div class="splash-fact"><span class="fact-num">20,000,000&times;</span> <span class="fact-text">heavier than our Sun</span></div>
-          <div class="splash-fact"><span class="fact-num">2.1 million mph</span> <span class="fact-text">hurtling through space</span></div>
+          <div class="splash-fact"><span class="fact-num">20 million</span> <span class="fact-text">times heavier than our Sun</span></div>
+          <div class="splash-fact"><span class="fact-num">2.1 million mph</span> <span class="fact-text">hurtling through intergalactic space</span></div>
           <div class="splash-fact"><span class="fact-num">200,000 light-years</span> <span class="fact-text">trail of newborn stars behind it</span></div>
-          <div class="splash-fact"><span class="fact-num">Kicked out</span> <span class="fact-text">of its own galaxy by colliding black holes</span></div>
+          <div class="splash-fact"><span class="fact-num">Kicked out</span> <span class="fact-text">by three colliding black holes in its galaxy</span></div>
         </div>
-        <button id="splash-enter" class="splash-btn" onclick="document.getElementById('intro-splash').classList.add('hidden');setTimeout(()=>document.getElementById('intro-splash').style.display='none',700)">Explore</button>
-        <div class="splash-credit">Based on <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;">Van Dokkum et al. 2026</a> &mdash; discovered with JWST</div>
+        <div class="splash-buttons">
+          <button id="splash-enter" class="splash-btn" onclick="document.getElementById('intro-splash').classList.add('hidden');setTimeout(()=>document.getElementById('intro-splash').style.display='none',700)">Explore the Simulation</button>
+        </div>
+        <div class="splash-credit">Based on <a href="https://arxiv.org/abs/2302.04888" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;">Van Dokkum et al. 2026</a> &mdash; confirmed by the James Webb Space Telescope</div>
       </div>
     </div>
 
@@ -69,12 +72,12 @@
     <!-- Right Panel -->
     <div id="right-panel">
       <!-- Tabs -->
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="tab-schematic" data-easy="How It Works" data-complex="Schematic">How It Works</button>
-        <button class="tab-btn" data-tab="tab-planetview" data-easy="Your Sky" data-complex="Sky View">Your Sky</button>
-        <button class="tab-btn" data-tab="tab-encounter" data-easy="What If?" data-complex="Encounter">What If?</button>
-        <button class="tab-btn" data-tab="tab-pv" data-easy="Speed Map" data-complex="PV Diagram">Speed Map</button>
-        <button class="tab-btn" data-tab="tab-wake" data-easy="The Trail" data-complex="Wake">The Trail</button>
+      <div class="tab-bar" role="tablist" aria-label="Visualization panels">
+        <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tab-schematic" data-easy="1. How It Works" data-complex="Schematic" data-index="0">1. How It Works</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-planetview" data-easy="2. Your Sky" data-complex="Sky View" data-index="1">2. Your Sky</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-encounter" data-easy="3. What If?" data-complex="Encounter" data-index="2">3. What If?</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-pv" data-easy="4. Speed Map" data-complex="PV Diagram" data-index="3">4. Speed Map</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-wake" data-easy="5. The Trail" data-complex="Wake" data-index="4">5. The Trail</button>
       </div>
 
       <!-- Schematic Tab (now default/first) -->
@@ -82,12 +85,16 @@
         <div class="plot-area" style="position:relative;">
           <canvas id="schematic-canvas"></canvas>
           <div class="easy-annotation easy-only" style="position:absolute;bottom:60px;left:16px;right:16px;">
-            The black hole plows through thin gas between galaxies. The gas piles up in front like a boat's bow wave, then flows around and trails behind as a glowing wake.
+            <strong>The bow wave.</strong> Imagine a speedboat on a lake. The black hole is the boat, and the thin gas between galaxies is the water. Gas piles up in front, flows around the sides, and trails behind as a glowing wake of newborn stars.
           </div>
         </div>
         <div class="slider-panel" id="schematic-sliders">
-          <h3 class="easy-only">Adjust the physics</h3>
+          <h3 class="easy-only">Play with the physics</h3>
           <h3 class="complex-only">Bow Shock Geometry</h3>
+        </div>
+        <div class="tab-nav easy-only">
+          <span class="tab-nav-hint">Start here! Drag the sliders to see how the shape changes</span>
+          <button class="tab-nav-btn tab-nav-next" data-dir="next">Your Sky &rarr;</button>
         </div>
       </div>
 
@@ -96,12 +103,16 @@
         <div class="plot-area" style="position:relative;">
           <canvas id="planetview-canvas"></canvas>
           <div class="easy-annotation easy-only" style="position:absolute;bottom:10px;left:16px;right:16px;">
-            What would you see if you looked up at the night sky from a planet in its path? Drag the distance slider to watch it approach.
+            <strong>Your last night sky.</strong> Imagine standing on a planet right in its path. At first you'd see a strange blue smudge. Then the sky starts to warp as gravity bends starlight. Hit "Watch It Approach" to see the end.
           </div>
         </div>
         <div class="slider-panel" id="planetview-sliders">
           <h3 class="easy-only">How far away is it?</h3>
           <h3 class="complex-only">Observer Distance</h3>
+        </div>
+        <div class="tab-nav easy-only">
+          <button class="tab-nav-btn tab-nav-prev" data-dir="prev">&larr; How It Works</button>
+          <button class="tab-nav-btn tab-nav-next" data-dir="next">What If? &rarr;</button>
         </div>
       </div>
 
@@ -109,14 +120,19 @@
       <div class="tab-content" id="tab-encounter">
         <div class="plot-area" style="position: relative;">
           <div id="encounter-info" class="encounter-info">
-            <h4>PLANETARY ENCOUNTER</h4>
-            <p>Adjust the timeline to see what happens when a 20 million solar mass black hole barrels through a solar system at 954 km/s.</p>
+            <h4 class="complex-only">PLANETARY ENCOUNTER</h4>
+            <h4 class="easy-only">WHAT HAPPENS TO A SOLAR SYSTEM?</h4>
+            <p class="complex-only">Adjust the timeline to see what happens when a 20 million solar mass black hole barrels through a solar system at 954 km/s.</p>
+            <p class="easy-only">This black hole weighs 20 million suns and moves at 2.1 million mph. Drag the timeline slider below to watch it tear through a solar system. It crosses the entire system in just 75 days. Look at the 3D view on the left!</p>
           </div>
-          <canvas id="encounter-canvas" style="display:none;"></canvas>
         </div>
         <div class="slider-panel" id="encounter-sliders">
           <h3 class="easy-only">What happens to a solar system?</h3>
           <h3 class="complex-only">Encounter Parameters</h3>
+        </div>
+        <div class="tab-nav easy-only">
+          <button class="tab-nav-btn tab-nav-prev" data-dir="prev">&larr; Your Sky</button>
+          <button class="tab-nav-btn tab-nav-next" data-dir="next">Speed Map &rarr;</button>
         </div>
       </div>
 
@@ -125,12 +141,16 @@
         <div class="plot-area" style="position:relative;">
           <canvas id="pv-canvas"></canvas>
           <div class="easy-annotation easy-only" style="position:absolute;bottom:10px;left:16px;right:16px;">
-            This shows how fast the gas is moving at different positions across the wake. The S-shaped curve is the model — orange dots are what the telescope actually measured.
+            <strong>Matching real data.</strong> The orange dots are real measurements from JWST. The blue curve is our mathematical model. Try adjusting the sliders until the curve passes through the dots — that's how scientists figure out how fast the black hole is actually moving!
           </div>
         </div>
         <div class="slider-panel" id="pv-sliders">
-          <h3 class="easy-only">Change the model</h3>
+          <h3 class="easy-only">Try to match the real data!</h3>
           <h3 class="complex-only">PV Model Parameters (Eq 1-8)</h3>
+        </div>
+        <div class="tab-nav easy-only">
+          <button class="tab-nav-btn tab-nav-prev" data-dir="prev">&larr; What If?</button>
+          <button class="tab-nav-btn tab-nav-next" data-dir="next">The Trail &rarr;</button>
         </div>
       </div>
 
@@ -139,39 +159,28 @@
         <div class="plot-area" style="position:relative;">
           <canvas id="wake-canvas"></canvas>
           <div class="easy-annotation easy-only" style="position:absolute;bottom:10px;left:16px;right:16px;">
-            The wake gets faster the closer you get to the black hole. Near the galaxy (left), things are calm. Near the BH (right), gas is moving at 300 km/s.
+            <strong>The 200,000 light-year trail.</strong> The wake gets faster the closer you get to the black hole. Near the galaxy (left side), things are calm. Close to the BH (right side), gas screams along at 300 km/s — faster than anything in our solar system.
           </div>
         </div>
         <div class="slider-panel" id="wake-sliders">
-          <h3 class="easy-only">Wake speed curve</h3>
+          <h3 class="easy-only">How fast is the trail moving?</h3>
           <h3 class="complex-only">Wake Model (Eq 19) &amp; Shock (Eq 13)</h3>
+        </div>
+        <div class="tab-nav easy-only">
+          <button class="tab-nav-btn tab-nav-prev" data-dir="prev">&larr; Speed Map</button>
+          <span class="tab-nav-hint">You've explored everything! Switch to Complex mode for the full physics.</span>
         </div>
       </div>
     </div>
 
     <!-- Toolbar -->
     <div id="toolbar">
-      <div class="toolbar-group complex-only" id="frame-toggle">
-        <span class="toolbar-label">Frame:</span>
-        <div class="toggle-group">
-          <button class="toggle-btn active" data-frame="bh">BH</button>
-          <button class="toggle-btn" data-frame="cgm">CGM</button>
-        </div>
-      </div>
-
-      <div class="toolbar-sep complex-only"></div>
-
       <div class="toolbar-group">
-        <span class="toolbar-label">Speed:</span>
-        <input type="range" class="toolbar-slider" id="speed-slider" min="0" max="3" step="0.1" value="1">
+        <span class="toolbar-label easy-only">Animation:</span>
+        <span class="toolbar-label complex-only">Speed:</span>
+        <input type="range" class="toolbar-slider" id="speed-slider" min="0" max="3" step="0.1" value="1" aria-label="Animation speed">
+        <span class="toolbar-speed-label" id="speed-label">1x</span>
       </div>
-
-      <div class="toolbar-sep complex-only"></div>
-
-      <label class="checkbox-toggle complex-only">
-        <input type="checkbox" id="vectors-toggle">
-        <span>Vectors</span>
-      </label>
 
       <div style="flex:1;"></div>
 

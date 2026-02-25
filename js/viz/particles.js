@@ -92,7 +92,7 @@ export function updateParticles(time, dt) {
     const rPerp = Math.sqrt(px * px + py * py);
     const r3d = Math.sqrt(px * px + py * py + pz * pz);
 
-    if (r3d < 0.01) r3d === 0.01;
+    if (r3d < 0.01) r3d = 0.01;
 
     // Compute polar angle from apex direction (-z)
     const theta = Math.acos(Math.max(-1, Math.min(1, -pz / (r3d || 0.01))));

@@ -259,35 +259,68 @@ export function updateEncounter(time, camera) {
 function updateInfoCallout(t, dist, tidalR, dMin, vel, mass) {
   if (!infoEl) return;
 
+  const isEasy = document.body.classList.contains('mode-easy');
   let phase, description;
-  const crossingTime = (200 / vel * 86400 / 86400).toFixed(0); // 200 AU / v in days
+  // 200 AU crossing time: 200 AU * 1.496e8 km/AU / vel km/s / 86400 s/day
+  const crossingDays = (200 * 1.496e8 / vel / 86400).toFixed(0);
 
-  if (t < 0.2) {
-    phase = 'APPROACH';
-    description = `BH approaching at ${vel} km/s (${(vel / 299792 * 100).toFixed(2)}% c). ` +
-      `At this speed, it crosses ~200 AU in about ${crossingTime} days. ` +
-      `Tidal forces beginning to perturb outer planet orbits.`;
-  } else if (t < 0.4) {
-    phase = 'OUTER DISRUPTION';
-    description = `Tidal radius: ${tidalR.toFixed(0)} AU. ` +
-      `Outer planets (Neptune, Uranus) orbits becoming chaotic. ` +
-      `Hill spheres collapsing — planets can no longer hold moons.`;
-  } else if (t < 0.6) {
-    phase = 'CLOSEST APPROACH';
-    description = `BH passing at ${dMin} AU from star. ` +
-      `M_BH = ${(mass / 1e7).toFixed(1)}×10⁷ M☉. ` +
-      `Bow shock (10⁶ K gas) sweeping through system. ` +
-      `Inner planet atmospheres being stripped.`;
-  } else if (t < 0.8) {
-    phase = 'SLINGSHOT';
-    description = `Planets flung out at high velocity. Some ejected into intergalactic space, ` +
-      `others captured into extreme orbits around BH. ` +
-      `Star's motion altered by gravitational impulse.`;
+  if (isEasy) {
+    // Teenager-friendly descriptions
+    if (t < 0.2) {
+      phase = 'IT\'S COMING';
+      description = `A 20-million-sun black hole is heading this way at ${(vel * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph. ` +
+        `It will cross the entire solar system in just ${crossingDays} days. ` +
+        `The outer planets are already starting to wobble.`;
+    } else if (t < 0.4) {
+      phase = 'CHAOS BEGINS';
+      description = `Neptune and Uranus are being yanked out of their orbits. ` +
+        `The black hole's gravity is ${(mass).toExponential(1)} times stronger than our Sun. ` +
+        `Moons are ripped away from their planets.`;
+    } else if (t < 0.6) {
+      phase = 'CLOSEST POINT';
+      description = `The black hole is passing ${dMin === 0 ? 'right through the center' : dMin + ' AU from our star (' + dMin + 'x the Earth-Sun distance)'}. ` +
+        `A wall of gas heated to 1,000,000 degrees is sweeping through. ` +
+        `Atmospheres are being blasted off planets like leaves in a hurricane.`;
+    } else if (t < 0.8) {
+      phase = 'FLUNG INTO SPACE';
+      description = `Planets are being launched out of the solar system like pinballs. ` +
+        `Some will wander through space forever as "rogue planets." ` +
+        `Others are captured by the black hole and dragged along.`;
+    } else {
+      phase = 'GONE';
+      description = `The solar system is destroyed. Total time: ~${crossingDays} days. ` +
+        `The star sits alone with no planets. ` +
+        `The black hole continues on, leaving devastation behind.`;
+    }
   } else {
-    phase = 'AFTERMATH';
-    description = `System destroyed in ~${crossingTime} days. ` +
-      `Surviving planets are rogue worlds hurtling through space. ` +
-      `Star left with no remaining bound planets.`;
+    // Complex mode descriptions
+    if (t < 0.2) {
+      phase = 'APPROACH';
+      description = `BH approaching at ${vel} km/s (${(vel / 299792 * 100).toFixed(2)}% c). ` +
+        `At this speed, it crosses ~200 AU in about ${crossingDays} days. ` +
+        `Tidal forces beginning to perturb outer planet orbits.`;
+    } else if (t < 0.4) {
+      phase = 'OUTER DISRUPTION';
+      description = `Tidal radius: ${tidalR.toFixed(0)} AU. ` +
+        `Outer planets (Neptune, Uranus) orbits becoming chaotic. ` +
+        `Hill spheres collapsing — planets can no longer hold moons.`;
+    } else if (t < 0.6) {
+      phase = 'CLOSEST APPROACH';
+      description = `BH passing at ${dMin} AU from star. ` +
+        `M_BH = ${(mass / 1e7).toFixed(1)}×10⁷ M☉. ` +
+        `Bow shock (10⁶ K gas) sweeping through system. ` +
+        `Inner planet atmospheres being stripped.`;
+    } else if (t < 0.8) {
+      phase = 'SLINGSHOT';
+      description = `Planets flung out at high velocity. Some ejected into intergalactic space, ` +
+        `others captured into extreme orbits around BH. ` +
+        `Star's motion altered by gravitational impulse.`;
+    } else {
+      phase = 'AFTERMATH';
+      description = `System destroyed in ~${crossingDays} days. ` +
+        `Surviving planets are rogue worlds hurtling through space. ` +
+        `Star left with no remaining bound planets.`;
+    }
   }
 
   infoEl.innerHTML = `<h4>${phase}</h4><p>${description}</p>`;
