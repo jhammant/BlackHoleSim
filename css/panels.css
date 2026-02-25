@@ -254,6 +254,75 @@
   flex: 1;
 }
 
+/* Mobile: fix tab content overflow and constrain panel sizes */
+@media (max-width: 1024px) {
+  .tab-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+
+  .slider-panel {
+    max-height: 160px;
+  }
+
+  .plot-area {
+    flex-shrink: 1;
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .plot-area {
+    min-height: 120px;
+    max-height: 35vh;
+  }
+
+  .slider-panel {
+    max-height: 120px;
+    padding: 8px 12px;
+  }
+
+  /* Easy annotations eat too much plot space on mobile */
+  .easy-annotation {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .plot-area {
+    min-height: 100px;
+    max-height: 30vh;
+  }
+
+  .slider-panel {
+    max-height: 100px;
+  }
+
+  .easy-annotation {
+    display: none;
+  }
+
+  .tab-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
 /* Frame indicator */
 .frame-indicator {
   position: absolute;

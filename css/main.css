@@ -359,7 +359,7 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
 @media (max-width: 1024px) {
   #app {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--header-height) 50% 1fr var(--toolbar-height);
+    grid-template-rows: var(--header-height) 40vh 1fr var(--toolbar-height);
     grid-template-areas:
       "header"
       "scene"
@@ -370,6 +370,7 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   #right-panel {
     border-left: none;
     border-top: 1px solid var(--border-dim);
+    overflow: hidden;
   }
 }
 
@@ -385,6 +386,23 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   .easy-annotation { font-size: 12px; padding: 8px 10px; }
   .tab-nav { padding: 6px 10px; }
   .tab-nav-btn { padding: 5px 10px; font-size: 11px; }
+
+  /* Key Facts overlay: shrink on mobile */
+  #easy-dashboard {
+    bottom: 8px;
+    left: 8px;
+    padding: 8px 10px;
+    min-width: 160px;
+    max-width: 200px;
+  }
+  .easy-dash-value { font-size: 11px; }
+  .easy-dash-comp { display: none; }
+  .easy-dash-icon { font-size: 12px; }
+  .easy-dash-row { margin-bottom: 3px; padding-bottom: 3px; gap: 6px; }
+  .easy-dash-title { margin-bottom: 4px; }
+
+  /* Fun facts: shrink */
+  #fun-facts { max-width: 180px; font-size: 10px; padding: 6px 10px; }
 }
 
 @media (max-width: 480px) {
@@ -395,4 +413,13 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   .splash-title { font-size: 48px; }
   .splash-content { padding: 20px; }
   .splash-fact { font-size: 13px; }
+
+  /* Hide Key Facts on small phones — too much canvas coverage */
+  #easy-dashboard { display: none !important; }
+  #fun-facts { display: none !important; }
+
+  /* Reduce scene further on small phones */
+  #app {
+    grid-template-rows: var(--header-height) 35vh 1fr var(--toolbar-height);
+  }
 }
