@@ -23,8 +23,8 @@ const EASY_ROWS = [
     key: 'v_star',
     icon: '🚀',
     format: v => {
-      const mph = (v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      const bulletX = (v / 3.0).toFixed(0); // bullet ~3 km/s
+      const mph = (v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const bulletX = Math.round(v / 0.46).toLocaleString(); // avg bullet ~460 m/s = 0.46 km/s
       return `<span class="easy-dash-value">${mph} mph</span><span class="easy-dash-comp">${bulletX}x faster than a bullet</span>`;
     }
   },

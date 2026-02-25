@@ -11,6 +11,7 @@ import { initPVDiagram, updatePVDiagram } from './plots/pv-diagram.js';
 import { initWakeProfile, updateWakeProfile } from './plots/wake-profile.js';
 import { initSchematic, updateSchematic, animateSchematic } from './plots/schematic.js';
 import { initPlanetView, updatePlanetView, animatePlanetView, startAutoApproach } from './plots/planetview.js';
+import { initEncounterDiagram, updateEncounterDiagram } from './plots/encounter-diagram.js';
 import { createSliderGroup, PV_SLIDERS, WAKE_SLIDERS, ENCOUNTER_SLIDERS } from './ui/sliders.js';
 import { initDashboard, updateDashboard } from './ui/dashboard.js';
 import { initTabs } from './ui/tabs.js';
@@ -72,6 +73,10 @@ export async function init() {
   if (wakeCanvas) await initWakeProfile(wakeCanvas);
   if (schematicCanvas) {
     try { initSchematic(schematicCanvas); } catch (e) { console.warn('Schematic init deferred:', e); }
+  }
+  const encounterCanvas = document.getElementById('encounter-canvas');
+  if (encounterCanvas) {
+    try { initEncounterDiagram(encounterCanvas); } catch (e) { console.warn('EncounterDiagram init deferred:', e); }
   }
   const planetviewCanvas = document.getElementById('planetview-canvas');
   if (planetviewCanvas) {
@@ -182,7 +187,7 @@ function setupSliders() {
     const SCHEMATIC_SLIDERS = [
       { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
         tooltip: 'How fast the black hole moves through space',
-        easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+        easyFormat: v => `${(v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
       { label: 'R₀', easyLabel: 'Standoff', param: 'R_0', min: 0.3, max: 3.0, step: 0.1, value: 1.2, unit: 'kpc',
         tooltip: 'Distance from the black hole to the shock front' },
       { label: 'R_c', easyLabel: 'Curve', param: 'R_c', min: 0.5, max: 5.0, step: 0.1, value: 1.8, unit: 'kpc',
@@ -212,7 +217,7 @@ function setupSliders() {
         }},
       { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
         tooltip: 'Black hole approach speed',
-        easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+        easyFormat: v => `${(v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
     ];
     createSliderGroup(pvSliderPanel2, PV_VIEW_SLIDERS, (param, value) => {
       updatePlanetView({ [param]: value });
@@ -235,10 +240,13 @@ function setupSliders() {
     createSliderGroup(encSliderPanel, ENCOUNTER_SLIDERS, (param, value) => {
       if (param === 'enc_mass') {
         setEncounterParams({ mass: Math.pow(10, value) });
+        updateEncounterDiagram({ mass: Math.pow(10, value) });
       } else if (param === 'enc_vel') {
         setEncounterParams({ velocity: value });
+        updateEncounterDiagram({ velocity: value });
       } else if (param === 'enc_dist') {
         setEncounterParams({ closestApproach: value });
+        updateEncounterDiagram({ closestApproach: value });
       }
     });
 
@@ -259,6 +267,7 @@ function setupSliders() {
     tlSlider.addEventListener('input', () => {
       const v = parseFloat(tlSlider.value);
       setEncounterParams({ timeline: v });
+      updateEncounterDiagram({ timeline: v });
       const phases = ['Approach', 'Disruption', 'Closest', 'Slingshot', 'Aftermath'];
       tlValue.textContent = phases[Math.min(4, Math.floor(v * 5))];
     });
@@ -281,6 +290,7 @@ function setupSliders() {
         modeRow.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         setEncounterParams({ mode: btn.dataset.mode });
+        updateEncounterDiagram({ mode: btn.dataset.mode });
       });
     });
   }

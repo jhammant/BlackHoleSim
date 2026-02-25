@@ -83,7 +83,7 @@ export function createSliderGroup(container, sliderConfigs, onChange) {
 export const PV_SLIDERS = [
   { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
     easyUnit: 'km/s', tooltip: 'Black hole velocity — how fast it plows through space',
-    easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+    easyFormat: v => `${(v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
   { label: 'i', easyLabel: 'Tilt', param: 'i', min: 15, max: 75, step: 1, value: 29, unit: '°',
     tooltip: 'Inclination angle — our viewing angle to the wake' },
   { label: 'χ', easyLabel: 'Compress', param: 'chi', min: 2.0, max: 4.0, step: 0.1, value: 3.0, unit: '',
@@ -107,7 +107,7 @@ export const WAKE_SLIDERS = [
     tooltip: 'Mixing length — how quickly the wake fades out' },
   { label: 'v★', easyLabel: 'Speed', param: 'v_star', min: 400, max: 1600, step: 10, value: 954, unit: 'km/s',
     tooltip: 'Black hole velocity',
-    easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+    easyFormat: v => `${(v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
   { label: 'R_c', easyLabel: 'Curve', param: 'R_c', min: 0.5, max: 5.0, step: 0.1, value: 1.8, unit: 'kpc',
     tooltip: 'Radius of curvature — how curved the shock front is' },
 ];
@@ -125,7 +125,7 @@ export const ENCOUNTER_SLIDERS = [
     tooltip: 'Black hole mass — in multiples of our Sun' },
   { label: 'v_BH', easyLabel: 'Speed', param: 'enc_vel', min: 200, max: 2000, step: 10, value: 954, unit: 'km/s',
     tooltip: 'Black hole approach speed',
-    easyFormat: v => `${(v * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
+    easyFormat: v => `${(v * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph` },
   { label: 'd_min', easyLabel: 'Miss by', param: 'enc_dist', min: 0, max: 500, step: 5, value: 50, unit: 'AU',
     tooltip: 'Closest approach distance — how close it passes the star (1 AU = Earth-Sun distance)',
     easyFormat: v => v === 0 ? 'Direct hit!' : `${v} AU (${v}x Earth-Sun)` },

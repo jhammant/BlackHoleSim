@@ -1,36 +1,37 @@
 // Planetary Encounter Mode — "What happens to a solar system in its path"
-// Shows orbital disruption, tidal effects, and bow shock interaction
+// Pre-simulates gravitational interaction so planets are dramatically ejected.
 
 import * as THREE from 'three';
 
-const AU_SCALE = 0.02; // visual scale: 1 AU = 0.02 scene units
-const TIME_SCALE = 1.0; // adjustable with slider
+const AU_SCALE = 0.02;
 
-// Planet data [name, orbital radius AU, size (visual), color]
 const PLANETS = [
   ['Mercury', 0.39, 0.003, 0xaaaaaa],
-  ['Venus', 0.72, 0.006, 0xddaa55],
-  ['Earth', 1.0, 0.006, 0x4488cc],
-  ['Mars', 1.52, 0.004, 0xcc5533],
-  ['Jupiter', 5.2, 0.015, 0xddaa77],
-  ['Saturn', 9.5, 0.013, 0xccbb88],
-  ['Uranus', 19.2, 0.009, 0x88bbcc],
-  ['Neptune', 30.0, 0.008, 0x4466cc],
+  ['Venus',   0.72, 0.006, 0xddaa55],
+  ['Earth',   1.0,  0.006, 0x4488cc],
+  ['Mars',    1.52, 0.004, 0xcc5533],
+  ['Jupiter', 5.2,  0.015, 0xddaa77],
+  ['Saturn',  9.5,  0.013, 0xccbb88],
+  ['Uranus', 19.2,  0.009, 0x88bbcc],
+  ['Neptune',30.0,  0.008, 0x4466cc],
 ];
 
 let encounterGroup;
 let starMesh, planetMeshes = [], orbitLines = [];
-let bhIndicator;
-let bhTrail;
+let bhIndicator, bhTrail;
 let encounterParams = {
-  mass: Math.pow(10, 7.3), // solar masses
-  velocity: 954,           // km/s
-  closestApproach: 50,     // AU
-  timeline: 0.5,           // 0 = approach, 1 = aftermath
-  mode: 'flyby',           // 'direct' or 'flyby'
+  mass: Math.pow(10, 7.3),
+  velocity: 954,
+  closestApproach: 50,
+  timeline: 0.5,
+  mode: 'flyby',
 };
 let infoEl = null;
 let isActive = false;
+
+// Pre-simulated planet states: array of {planets: [{x,y,z}...], bhX, bhZ}
+let simFrames = null;
+let lastSimKey = '';
 
 export function createEncounterScene(scene, infoPanelEl) {
   infoEl = infoPanelEl;
@@ -46,85 +47,59 @@ export function createEncounterScene(scene, infoPanelEl) {
   // Star glow
   const glowGeo = new THREE.SphereGeometry(0.06, 16, 16);
   const glowMat = new THREE.MeshBasicMaterial({
-    color: 0xffdd44,
-    transparent: true,
-    opacity: 0.2,
-    blending: THREE.AdditiveBlending,
+    color: 0xffdd44, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending,
   });
   encounterGroup.add(new THREE.Mesh(glowGeo, glowMat));
 
   // Planets
   PLANETS.forEach(([name, radiusAU, size, color]) => {
-    const pGeo = new THREE.SphereGeometry(size, 16, 16);
-    const pMat = new THREE.MeshBasicMaterial({ color });
-    const pMesh = new THREE.Mesh(pGeo, pMat);
+    const pMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(size, 16, 16),
+      new THREE.MeshBasicMaterial({ color })
+    );
     pMesh.userData = { name, radiusAU, originalRadius: radiusAU, angle: Math.random() * Math.PI * 2 };
     planetMeshes.push(pMesh);
     encounterGroup.add(pMesh);
 
     // Orbit ring
-    const orbitPts = [];
+    const pts = [];
     for (let i = 0; i <= 128; i++) {
       const a = (i / 128) * Math.PI * 2;
-      orbitPts.push(new THREE.Vector3(
-        Math.cos(a) * radiusAU * AU_SCALE,
-        0,
-        Math.sin(a) * radiusAU * AU_SCALE
-      ));
+      pts.push(new THREE.Vector3(Math.cos(a) * radiusAU * AU_SCALE, 0, Math.sin(a) * radiusAU * AU_SCALE));
     }
-    const orbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPts);
-    const orbitMat = new THREE.LineBasicMaterial({
-      color: 0x333366,
-      transparent: true,
-      opacity: 0.4,
-    });
-    const orbitLine = new THREE.Line(orbitGeo, orbitMat);
-    orbitLines.push(orbitLine);
-    encounterGroup.add(orbitLine);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0x333366, transparent: true, opacity: 0.4 })
+    );
+    orbitLines.push(line);
+    encounterGroup.add(line);
   });
 
-  // BH indicator (approaching)
+  // BH indicator
   const bhGeo = new THREE.SphereGeometry(0.04, 32, 32);
-  const bhMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  bhIndicator = new THREE.Mesh(bhGeo, bhMat);
+  bhIndicator = new THREE.Mesh(bhGeo, new THREE.MeshBasicMaterial({ color: 0x000000 }));
 
-  // BH glow
-  const bhGlowGeo = new THREE.RingGeometry(0.05, 0.12, 32);
-  const bhGlowMat = new THREE.MeshBasicMaterial({
-    color: 0xff6622,
-    transparent: true,
-    opacity: 0.6,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
-  });
-  const bhGlow = new THREE.Mesh(bhGlowGeo, bhGlowMat);
+  // BH glow ring
+  const bhGlow = new THREE.Mesh(
+    new THREE.RingGeometry(0.05, 0.12, 32),
+    new THREE.MeshBasicMaterial({ color: 0xff6622, transparent: true, opacity: 0.6, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })
+  );
   bhIndicator.add(bhGlow);
   encounterGroup.add(bhIndicator);
 
   // BH trail
   const trailGeo = new THREE.BufferGeometry();
-  const trailPositions = new Float32Array(300);
-  trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-  const trailMat = new THREE.LineBasicMaterial({
-    color: 0xff4444,
-    transparent: true,
-    opacity: 0.4,
-  });
-  bhTrail = new THREE.Line(trailGeo, trailMat);
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(300), 3));
+  bhTrail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xff4444, transparent: true, opacity: 0.4 }));
   encounterGroup.add(bhTrail);
 
-  // Shock wave indicator (simplified cone)
-  const shockGeo = new THREE.ConeGeometry(0.15, 0.4, 16, 1, true);
-  const shockMat = new THREE.MeshBasicMaterial({
-    color: 0x00ccff,
-    transparent: true,
-    opacity: 0.15,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
-  });
-  const shockCone = new THREE.Mesh(shockGeo, shockMat);
-  shockCone.rotation.x = Math.PI; // open toward direction of motion
-  bhIndicator.add(shockCone);
+  // Shock cone
+  const shockMesh = new THREE.Mesh(
+    new THREE.ConeGeometry(0.15, 0.4, 16, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.15, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })
+  );
+  shockMesh.rotation.x = Math.PI;
+  bhIndicator.add(shockMesh);
 
   scene.add(encounterGroup);
 }
@@ -136,190 +111,226 @@ export function setEncounterActive(active) {
 
 export function setEncounterParams(params) {
   Object.assign(encounterParams, params);
+  // Invalidate simulation when params change
+  const key = `${encounterParams.mass}_${encounterParams.velocity}_${encounterParams.closestApproach}_${encounterParams.mode}`;
+  if (key !== lastSimKey) {
+    runSimulation();
+    lastSimKey = key;
+  }
 }
+
+/* ---------- Pre-simulation ---------- */
+
+function runSimulation() {
+  const STEPS = 300;
+  const M = encounterParams.mass;
+  const isDirect = encounterParams.mode === 'direct';
+  const dMin = isDirect ? 0 : encounterParams.closestApproach;
+
+  // BH traversal: it crosses from z = -3 to z = +3 (scene units)
+  // That's ±150 AU at AU_SCALE=0.02
+  const BH_RANGE = 3.0;
+
+  // Initialize planet states
+  const planets = PLANETS.map(([name, rAU, size, color], i) => {
+    const angle = planetMeshes[i]?.userData.angle || (i * 0.7);
+    return {
+      x: Math.cos(angle) * rAU * AU_SCALE,
+      y: 0,
+      z: Math.sin(angle) * rAU * AU_SCALE,
+      vx: 0, vy: 0, vz: 0,
+      rAU,
+      disrupted: false,
+      originalColor: color,
+    };
+  });
+
+  simFrames = [];
+
+  for (let step = 0; step <= STEPS; step++) {
+    const t = step / STEPS;
+    const bhZ = (t - 0.5) * 2 * BH_RANGE;
+    const bhX = dMin * AU_SCALE;
+
+    // Save frame
+    simFrames.push({
+      t,
+      bhX, bhZ,
+      planets: planets.map(p => ({ x: p.x, y: p.y, z: p.z, disrupted: p.disrupted })),
+    });
+
+    // Physics step: apply BH gravity to each planet
+    const dt = 1 / STEPS;
+    for (const p of planets) {
+      const dx = bhX - p.x;
+      const dy = -p.y;
+      const dz = bhZ - p.z;
+      const dist2 = dx * dx + dy * dy + dz * dz;
+      const dist = Math.sqrt(dist2) || 0.001;
+      const distAU = dist / AU_SCALE;
+
+      // Gravitational acceleration: G*M/r^2, scaled for visual effect
+      // M is in solar masses. Real tidal radius ~ (M)^(1/3) AU.
+      // We want strong disruption when BH is within ~100 AU
+      const accelMag = M * 2e-8 * AU_SCALE / (dist2 + 0.0001) * dt;
+
+      if (distAU < 800) {
+        p.vx += (dx / dist) * accelMag;
+        p.vy += (dy / dist) * accelMag * 0.3;
+        p.vz += (dz / dist) * accelMag;
+
+        if (accelMag > 0.0002) p.disrupted = true;
+      }
+
+      // Solar gravity (weak restoring force for undisrupted planets)
+      if (!p.disrupted) {
+        const sr = Math.sqrt(p.x * p.x + p.z * p.z) || 0.001;
+        // Tangential orbital velocity
+        const orbSpeed = 0.0004 / Math.sqrt(Math.max(p.rAU, 0.1));
+        p.vx += (-p.z / sr) * orbSpeed;
+        p.vz += (p.x / sr) * orbSpeed;
+        // Radial restoring
+        const target = p.rAU * AU_SCALE;
+        const radialForce = (sr - target) * 0.02;
+        p.vx -= (p.x / sr) * radialForce * dt;
+        p.vz -= (p.z / sr) * radialForce * dt;
+      }
+
+      // Damping for undisrupted (keeps orbits stable)
+      if (!p.disrupted) {
+        p.vx *= 0.97;
+        p.vy *= 0.97;
+        p.vz *= 0.97;
+      }
+
+      // Integrate position
+      p.x += p.vx;
+      p.y += p.vy;
+      p.z += p.vz;
+    }
+  }
+}
+
+/* ---------- Rendering ---------- */
 
 export function updateEncounter(time, camera) {
   if (!isActive || !encounterGroup) return;
 
-  const t = encounterParams.timeline; // 0 to 1
+  // Ensure simulation exists
+  if (!simFrames) runSimulation();
+
+  const t = encounterParams.timeline;
   const M_bh = encounterParams.mass;
   const v_bh = encounterParams.velocity;
   const d_min = encounterParams.closestApproach;
   const isDirect = encounterParams.mode === 'direct';
 
-  // BH position along its trajectory
-  // At t=0: far approach, t=0.5: closest, t=1.0: departed
-  const bhDist = (t - 0.5) * 2.0; // -1 to +1, in scene units (scaled)
-  const approachOffset = isDirect ? 0 : d_min * AU_SCALE;
+  // Find the simulation frame for this timeline position
+  const frameIdx = Math.min(simFrames.length - 1, Math.floor(t * (simFrames.length - 1)));
+  const nextIdx = Math.min(simFrames.length - 1, frameIdx + 1);
+  const frame = simFrames[frameIdx];
+  const nextFrame = simFrames[nextIdx];
+  const frac = (t * (simFrames.length - 1)) - frameIdx;
 
-  bhIndicator.position.set(
-    approachOffset,
-    0,
-    bhDist * 1.5 // z-axis approach
-  );
+  // BH position (interpolated)
+  const bhX = frame.bhX + (nextFrame.bhX - frame.bhX) * frac;
+  const bhZ = frame.bhZ + (nextFrame.bhZ - frame.bhZ) * frac;
+  bhIndicator.position.set(bhX, 0, bhZ);
 
   // BH trail
   const trailPos = bhTrail.geometry.attributes.position.array;
-  const trailCount = 100;
+  const trailCount = Math.min(100, frameIdx + 1);
   for (let i = 0; i < trailCount; i++) {
-    const tt = t - i * 0.005;
-    const bd = (tt - 0.5) * 2.0;
-    trailPos[i * 3] = approachOffset;
+    const fi = Math.max(0, frameIdx - i);
+    trailPos[i * 3] = simFrames[fi].bhX;
     trailPos[i * 3 + 1] = 0;
-    trailPos[i * 3 + 2] = bd * 1.5;
+    trailPos[i * 3 + 2] = simFrames[fi].bhZ;
   }
   bhTrail.geometry.attributes.position.needsUpdate = true;
   bhTrail.geometry.setDrawRange(0, trailCount);
 
-  // Tidal influence calculation
-  const bhWorldPos = new THREE.Vector3();
-  bhIndicator.getWorldPosition(bhWorldPos);
-  const distToBH_AU = bhWorldPos.length() / AU_SCALE;
-
-  // Hill sphere: r_Hill = a * (m_planet / (3 * M_BH))^(1/3)
-  // Tidal radius: r_tidal = R_star * (M_BH / M_star)^(1/3)
-  const tidalRadius = 1.0 * Math.pow(M_bh, 1 / 3); // in AU, simplified
-
-  // Update planets
-  planetMeshes.forEach((planet, idx) => {
-    const data = planet.userData;
-    const orbitR = data.originalRadius;
-
-    // Orbital phase (speeds up for inner planets)
-    const orbitalPeriod = Math.pow(orbitR, 1.5); // Kepler's law
-    const phase = data.angle + time * 0.001 / orbitalPeriod;
-
-    // Calculate tidal disruption
-    const planetPos = new THREE.Vector3(
-      Math.cos(phase) * orbitR * AU_SCALE,
-      0,
-      Math.sin(phase) * orbitR * AU_SCALE
+  // Update planets from simulation
+  planetMeshes.forEach((mesh, idx) => {
+    const fp = frame.planets[idx];
+    const np = nextFrame.planets[idx];
+    mesh.position.set(
+      fp.x + (np.x - fp.x) * frac,
+      fp.y + (np.y - fp.y) * frac,
+      fp.z + (np.z - fp.z) * frac,
     );
 
-    const distPlanetToBH = planetPos.distanceTo(bhWorldPos) / AU_SCALE;
-
-    // Hill sphere radius for this planet vs BH
-    const hillR = orbitR * Math.pow(1 / (3 * M_bh), 1 / 3);
-
-    // Disruption factor: how much the orbit is disturbed
-    let disruption = 0;
-    if (distPlanetToBH < tidalRadius * 5) {
-      disruption = Math.min(1, tidalRadius / Math.max(distPlanetToBH, 0.1));
+    // Color shift to red when disrupted
+    if (fp.disrupted) {
+      mesh.material.color.lerp(new THREE.Color(0xff2200), 0.02);
     }
 
-    // Apply disruption to orbit
-    if (t > 0.3 && disruption > 0.1) {
-      // Orbit becomes eccentric and shifts
-      const pull = new THREE.Vector3().copy(bhWorldPos).sub(planetPos);
-      pull.normalize().multiplyScalar(disruption * 0.003);
-      planetPos.add(pull);
-
-      // Add vertical displacement (orbits tilting)
-      planetPos.y += disruption * Math.sin(phase * 3) * orbitR * AU_SCALE * 0.3;
-
-      // Color shift to red (heating from bow shock)
-      if (disruption > 0.5) {
-        planet.material.color.lerp(new THREE.Color(0xff2200), 0.01);
-      }
-    }
-
-    // Slingshot effect for close encounters
-    if (t > 0.6 && distPlanetToBH < d_min * 2 && disruption > 0.3) {
-      const flingDir = new THREE.Vector3().copy(planetPos).sub(bhWorldPos).normalize();
-      const flingSpeed = disruption * 0.01 * (t - 0.5);
-      planetPos.add(flingDir.multiplyScalar(flingSpeed));
-    }
-
-    planet.position.copy(planetPos);
-
-    // Update orbit line visibility
+    // Orbit line fades when disrupted
     if (orbitLines[idx]) {
-      orbitLines[idx].material.opacity = Math.max(0.05, 0.4 * (1 - disruption));
+      orbitLines[idx].material.opacity = fp.disrupted ? Math.max(0.05, 0.4 * (1 - t * 2)) : 0.4;
     }
   });
 
-  // Star tidal stretching near direct hit
+  // Star tidal stretching on direct hit
   if (isDirect && Math.abs(t - 0.5) < 0.15) {
     const stretch = 1 + (1 - Math.abs(t - 0.5) / 0.15) * 2;
-    const dir = new THREE.Vector3().copy(bhWorldPos).normalize();
-    starMesh.scale.set(
-      1 + (stretch - 1) * Math.abs(dir.x),
-      1 + (stretch - 1) * Math.abs(dir.y),
-      1 + (stretch - 1) * Math.abs(dir.z)
-    );
+    starMesh.scale.set(1, 1, stretch);
     starMesh.material.color.lerp(new THREE.Color(0xff4400), 0.02);
   } else {
     starMesh.scale.lerp(new THREE.Vector3(1, 1, 1), 0.05);
   }
 
-  // Update info callout
-  updateInfoCallout(t, distToBH_AU, tidalRadius, d_min, v_bh, M_bh);
+  // Distance for info
+  const distToBH_AU = Math.sqrt(bhX * bhX + bhZ * bhZ) / AU_SCALE;
+  const tidalR = Math.pow(M_bh, 1 / 3);
+  updateInfoCallout(t, distToBH_AU, tidalR, d_min, v_bh, M_bh);
 }
 
 function updateInfoCallout(t, dist, tidalR, dMin, vel, mass) {
   if (!infoEl) return;
 
   const isEasy = document.body.classList.contains('mode-easy');
-  let phase, description;
-  // 200 AU crossing time: 200 AU * 1.496e8 km/AU / vel km/s / 86400 s/day
   const crossingDays = (200 * 1.496e8 / vel / 86400).toFixed(0);
+  let phase, description;
 
   if (isEasy) {
-    // Teenager-friendly descriptions
     if (t < 0.2) {
-      phase = 'IT\'S COMING';
-      description = `A 20-million-sun black hole is heading this way at ${(vel * 2.237).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph. ` +
-        `It will cross the entire solar system in just ${crossingDays} days. ` +
-        `The outer planets are already starting to wobble.`;
+      phase = "IT'S COMING";
+      description = `A 20-million-sun black hole is heading this way at ${(vel * 2236.94).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} mph. ` +
+        `It will cross the entire solar system in just ${crossingDays} days. The outer planets are already starting to wobble.`;
     } else if (t < 0.4) {
       phase = 'CHAOS BEGINS';
       description = `Neptune and Uranus are being yanked out of their orbits. ` +
-        `The black hole's gravity is ${(mass).toExponential(1)} times stronger than our Sun. ` +
-        `Moons are ripped away from their planets.`;
+        `The black hole's gravity is ${mass.toExponential(1)} times stronger than our Sun. Moons are ripped from planets.`;
     } else if (t < 0.6) {
       phase = 'CLOSEST POINT';
-      description = `The black hole is passing ${dMin === 0 ? 'right through the center' : dMin + ' AU from our star (' + dMin + 'x the Earth-Sun distance)'}. ` +
-        `A wall of gas heated to 1,000,000 degrees is sweeping through. ` +
-        `Atmospheres are being blasted off planets like leaves in a hurricane.`;
+      description = `The black hole is passing ${dMin === 0 ? 'right through the center' : dMin + ' AU from our star'}. ` +
+        `A wall of million-degree gas is sweeping through. Atmospheres are blasted off.`;
     } else if (t < 0.8) {
       phase = 'FLUNG INTO SPACE';
       description = `Planets are being launched out of the solar system like pinballs. ` +
-        `Some will wander through space forever as "rogue planets." ` +
-        `Others are captured by the black hole and dragged along.`;
+        `Some will wander space forever as rogue planets. Others are dragged along by the black hole.`;
     } else {
       phase = 'GONE';
       description = `The solar system is destroyed. Total time: ~${crossingDays} days. ` +
-        `The star sits alone with no planets. ` +
-        `The black hole continues on, leaving devastation behind.`;
+        `The star sits alone. The black hole moves on, unstoppable.`;
     }
   } else {
-    // Complex mode descriptions
     if (t < 0.2) {
       phase = 'APPROACH';
       description = `BH approaching at ${vel} km/s (${(vel / 299792 * 100).toFixed(2)}% c). ` +
-        `At this speed, it crosses ~200 AU in about ${crossingDays} days. ` +
-        `Tidal forces beginning to perturb outer planet orbits.`;
+        `Crosses ~200 AU in ${crossingDays} days. Outer orbits perturbed.`;
     } else if (t < 0.4) {
       phase = 'OUTER DISRUPTION';
-      description = `Tidal radius: ${tidalR.toFixed(0)} AU. ` +
-        `Outer planets (Neptune, Uranus) orbits becoming chaotic. ` +
-        `Hill spheres collapsing — planets can no longer hold moons.`;
+      description = `Tidal radius: ${tidalR.toFixed(0)} AU. Outer planet Hill spheres collapsing.`;
     } else if (t < 0.6) {
       phase = 'CLOSEST APPROACH';
-      description = `BH passing at ${dMin} AU from star. ` +
-        `M_BH = ${(mass / 1e7).toFixed(1)}×10⁷ M☉. ` +
-        `Bow shock (10⁶ K gas) sweeping through system. ` +
-        `Inner planet atmospheres being stripped.`;
+      description = `BH at ${dMin} AU from star. M_BH = ${(mass / 1e7).toFixed(1)}×10⁷ M☉. Bow shock sweeping system.`;
     } else if (t < 0.8) {
       phase = 'SLINGSHOT';
-      description = `Planets flung out at high velocity. Some ejected into intergalactic space, ` +
-        `others captured into extreme orbits around BH. ` +
-        `Star's motion altered by gravitational impulse.`;
+      description = `Planets ejected at high velocity. Some captured into BH orbits.`;
     } else {
       phase = 'AFTERMATH';
-      description = `System destroyed in ~${crossingDays} days. ` +
-        `Surviving planets are rogue worlds hurtling through space. ` +
-        `Star left with no remaining bound planets.`;
+      description = `System destroyed in ~${crossingDays} days. Surviving planets are rogue worlds.`;
     }
   }
 
