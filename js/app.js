@@ -10,7 +10,7 @@ import { createEncounterScene, setEncounterActive, setEncounterParams, updateEnc
 import { initPVDiagram, updatePVDiagram } from './plots/pv-diagram.js';
 import { initWakeProfile, updateWakeProfile } from './plots/wake-profile.js';
 import { initSchematic, updateSchematic, animateSchematic } from './plots/schematic.js';
-import { initPlanetView, updatePlanetView, animatePlanetView } from './plots/planetview.js';
+import { initPlanetView, updatePlanetView, animatePlanetView, startAutoApproach } from './plots/planetview.js';
 import { createSliderGroup, PV_SLIDERS, WAKE_SLIDERS, ENCOUNTER_SLIDERS } from './ui/sliders.js';
 import { initDashboard, updateDashboard } from './ui/dashboard.js';
 import { initTabs } from './ui/tabs.js';
@@ -196,6 +196,16 @@ function setupSliders() {
     createSliderGroup(pvSliderPanel2, PV_VIEW_SLIDERS, (param, value) => {
       updatePlanetView({ [param]: value });
     });
+  }
+
+  // Auto-approach button for planet view
+  if (pvSliderPanel2) {
+    const btn = document.createElement('button');
+    btn.className = 'splash-btn';
+    btn.style.cssText = 'margin-top:10px;padding:8px 20px;font-size:12px;width:100%;';
+    btn.textContent = 'Watch It Approach';
+    btn.addEventListener('click', startAutoApproach);
+    pvSliderPanel2.appendChild(btn);
   }
 
   // Encounter sliders

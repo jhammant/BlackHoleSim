@@ -46,9 +46,29 @@ export function updatePlanetView(params) {
   draw();
 }
 
+let autoAnimate = false;
+let autoStartTime = 0;
+
 export function animatePlanetView(time) {
   animTime = time;
+  if (autoAnimate) {
+    if (!autoStartTime) autoStartTime = time;
+    const elapsed = (time - autoStartTime) * 0.001; // seconds
+    // Go from 5000 ly to 0 over ~20 seconds, then hold at 0
+    const t = Math.min(1, elapsed / 20);
+    const dist = 5000 * Math.pow(1 - t, 3); // cubic ease — accelerates as it approaches
+    currentParams.distance = Math.max(0.01, dist);
+    // Update slider if it exists
+    const slider = document.querySelector('#planetview-sliders input[type="range"]');
+    if (slider) slider.value = currentParams.distance;
+  }
   draw();
+}
+
+export function startAutoApproach() {
+  autoAnimate = true;
+  autoStartTime = 0;
+  currentParams.distance = 5000;
 }
 
 function resize() {
@@ -70,6 +90,30 @@ function draw() {
 
   ctx.save();
   ctx.scale(dpr, dpr);
+
+  // Impact / blackout when very close
+  if (dist < 1) {
+    const fade = Math.max(0, dist);
+    // Screen goes white flash then black
+    if (dist < 0.3) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('You wouldn\'t feel a thing.', w / 2, h / 2 - 20);
+      ctx.font = '12px "Inter", sans-serif';
+      ctx.fillStyle = '#666688';
+      ctx.fillText('At 954 km/s, the bow shock vaporizes everything instantly.', w / 2, h / 2 + 10);
+      ctx.fillText('The planet is shredded by tidal forces before it even arrives.', w / 2, h / 2 + 30);
+      ctx.restore();
+      return;
+    }
+    // White flash transition
+    const flashIntensity = 1 - (dist - 0.05) / 0.95;
+    ctx.fillStyle = `rgba(255, 200, 150, ${flashIntensity * 0.8})`;
+    ctx.fillRect(0, 0, w, h);
+  }
 
   // Night sky background
   const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
