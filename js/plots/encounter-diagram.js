@@ -30,10 +30,17 @@ export function initEncounterDiagram(canvasEl) {
   canvas = canvasEl;
   ctx = canvas.getContext('2d');
   dpr = window.devicePixelRatio || 1;
-  resize();
   runSim();
-  draw();
-  window.addEventListener('resize', () => { resize(); draw(); });
+  // Tab may be hidden at init — defer first render
+  resize();
+  if (canvas.width > 0 && canvas.height > 0) draw();
+  window.addEventListener('resize', () => { resize(); if (canvas.width > 0) draw(); });
+  // Re-render when encounter tab becomes visible
+  window.addEventListener('tabchange', (e) => {
+    if (e.detail.tab === 'tab-encounter') {
+      setTimeout(() => { resize(); draw(); }, 60);
+    }
+  });
 }
 
 export function updateEncounterDiagram(newParams) {
