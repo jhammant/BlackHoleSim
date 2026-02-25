@@ -32,6 +32,7 @@ export function initPlanetView(canvasEl) {
       hue: Math.random() < 0.3 ? 220 : Math.random() < 0.6 ? 40 : 0, // blue, warm, white
       twinklePhase: Math.random() * Math.PI * 2,
       twinkleSpeed: 0.5 + Math.random() * 2,
+      depth: Math.random(), // 0 = near observer, 1 = far away
     });
   }
 
@@ -126,9 +127,6 @@ function draw() {
   // Milky Way band (subtle)
   drawMilkyWay(w, h);
 
-  // Draw background stars with twinkle
-  drawStars(w, h);
-
   // Center of view = where the BH is approaching from
   const cx = w * 0.5;
   const cy = h * 0.4;
@@ -138,10 +136,16 @@ function draw() {
   // At 500 ly with 2e7 solar masses, the Einstein ring would be tiny but we scale for visualization
   const angularScale = Math.max(5, 200 / Math.sqrt(dist));
 
+  // Stars behind the shock — already swept by the approaching system
+  drawStars(w, h, cx, cy, angularScale, dist, 'behind');
+
   // Draw the BH and its effects
   drawGravitationalLensing(cx, cy, angularScale, dist, M_BH, w, h);
   drawBowShockGlow(cx, cy, angularScale, dist, v, w, h);
   drawBlackHoleShadow(cx, cy, angularScale, dist);
+
+  // Stars in front of the shock — undisturbed, not yet reached by the bow shock
+  drawStars(w, h, cx, cy, angularScale, dist, 'front');
 
   // Info overlay
   drawInfoOverlay(w, h, dist, v, M_BH);
@@ -172,33 +176,74 @@ function drawMilkyWay(w, h) {
   ctx.restore();
 }
 
-function drawStars(w, h) {
+function drawStars(w, h, cx, cy, scale, dist, layer) {
   const t = animTime * 0.001;
+  // Normalized BH position: 1.0 when far (5000 ly), 0.0 at arrival
+  // Stars with depth > bhNormDist have been overtaken by the shock
+  const bhNormDist = dist / 5000;
+  const shockRadius = scale * 2.5;
 
   for (const star of stars) {
-    const sx = star.x * w;
-    const sy = star.y * h * 0.85; // keep above horizon
+    const isBehind = star.depth > bhNormDist;
+
+    if (layer === 'behind' && !isBehind) continue;
+    if (layer === 'front' && isBehind) continue;
+
+    let sx = star.x * w;
+    let sy = star.y * h * 0.85; // keep above horizon
 
     const twinkle = 0.7 + 0.3 * Math.sin(t * star.twinkleSpeed + star.twinklePhase);
-    const b = star.brightness * twinkle;
+    let b = star.brightness * twinkle;
+    let starSize = star.size * twinkle;
+    let hue = star.hue;
 
-    if (star.hue === 0) {
-      ctx.fillStyle = `rgba(${255 * b}, ${250 * b}, ${245 * b}, ${b})`;
-    } else if (star.hue === 220) {
-      ctx.fillStyle = `rgba(${180 * b}, ${200 * b}, ${255 * b}, ${b})`;
+    if (isBehind) {
+      const dx = sx - cx;
+      const dy = sy - cy;
+      const distToCenter = Math.sqrt(dx * dx + dy * dy);
+
+      // How recently was this star swept? (closer depth to boundary = more recent)
+      const sweepRecency = 1 - Math.min(1, (star.depth - bhNormDist) / 0.05);
+
+      // Recently swept stars: brief shock-heating flash (blue brightening)
+      if (sweepRecency > 0.5) {
+        b *= 1 + (sweepRecency - 0.5) * 2;
+        hue = 220; // shock-heated → blue
+      }
+
+      // Stars inside the shock radius: dimmed by hot shocked gas
+      if (distToCenter < shockRadius) {
+        const dimFactor = distToCenter / shockRadius;
+        b *= 0.3 + 0.7 * dimFactor;
+      }
+
+      // Gravitational lensing: displace stars outward near center
+      if (distToCenter < shockRadius * 2 && distToCenter > 1) {
+        const lensingStrength = Math.max(0, 1 - distToCenter / (shockRadius * 2));
+        const pushDist = lensingStrength * scale * 0.3;
+        const angle = Math.atan2(dy, dx);
+        sx += Math.cos(angle) * pushDist;
+        sy += Math.sin(angle) * pushDist;
+      }
+    }
+
+    if (hue === 0) {
+      ctx.fillStyle = `rgba(${255 * b}, ${250 * b}, ${245 * b}, ${Math.min(1, b)})`;
+    } else if (hue === 220) {
+      ctx.fillStyle = `rgba(${180 * b}, ${200 * b}, ${255 * b}, ${Math.min(1, b)})`;
     } else {
-      ctx.fillStyle = `rgba(${255 * b}, ${220 * b}, ${180 * b}, ${b})`;
+      ctx.fillStyle = `rgba(${255 * b}, ${220 * b}, ${180 * b}, ${Math.min(1, b)})`;
     }
 
     ctx.beginPath();
-    ctx.arc(sx, sy, star.size * twinkle, 0, Math.PI * 2);
+    ctx.arc(sx, sy, starSize, 0, Math.PI * 2);
     ctx.fill();
 
     // Bright stars get a cross/spike
     if (star.brightness > 0.8 && star.size > 1.5) {
       ctx.strokeStyle = ctx.fillStyle;
       ctx.lineWidth = 0.5;
-      const spikeLen = star.size * 3 * twinkle;
+      const spikeLen = starSize * 3;
       ctx.beginPath();
       ctx.moveTo(sx - spikeLen, sy); ctx.lineTo(sx + spikeLen, sy);
       ctx.moveTo(sx, sy - spikeLen); ctx.lineTo(sx, sy + spikeLen);
