@@ -22,6 +22,19 @@ let lastTime = 0;
 let encounterActive = false;
 let schematicActive = false;
 let planetViewActive = false;
+let easyMode = true; // Start in easy mode
+
+const FUN_FACTS = [
+  'This black hole is moving 300\u00d7 faster than a bullet',
+  'Its wake is longer than 2 Milky Way galaxies side by side',
+  'It crosses an entire solar system in about 75 days',
+  'It weighs as much as 20 million Suns',
+  'The trail of stars it leaves behind is 200,000 light-years long',
+  'It was kicked out of its galaxy by three colliding black holes',
+  'The gas in its bow shock is heated to 1,000,000\u00b0C',
+  'It\'s moving at 0.3% the speed of light \u2014 fast enough to cross the US in 5 seconds',
+  'First confirmed by JWST in 2026',
+];
 
 export async function init() {
   // Initialize tabs
@@ -90,6 +103,29 @@ export async function init() {
 
   // Update header velocity readout
   updateVelocityReadout(state.v_star);
+
+  // Easy/Complex mode toggle
+  setupModeToggle();
+
+  // Splash screen
+  const splashBtn = document.getElementById('splash-enter');
+  if (splashBtn) {
+    splashBtn.addEventListener('click', () => {
+      document.getElementById('intro-splash').classList.add('hidden');
+      setTimeout(() => { document.getElementById('intro-splash').style.display = 'none'; }, 700);
+    });
+  }
+
+  // Fun facts rotation
+  setInterval(() => {
+    const el = document.getElementById('fun-fact-text');
+    if (el && easyMode) {
+      el.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+    }
+  }, 5000);
+
+  // Set initial mode
+  setMode('easy');
 }
 
 function setupSliders() {
@@ -263,11 +299,38 @@ window.addEventListener('tabchange', (e) => {
 
 function updateVelocityReadout(v) {
   const el = document.getElementById('velocity-value');
-  if (el) {
-    el.textContent = `${v.toFixed(0)} km/s`;
-  }
+  if (el) el.textContent = `${v.toFixed(0)} km/s`;
   const fracEl = document.getElementById('velocity-frac');
-  if (fracEl) {
-    fracEl.textContent = `(${(v / 299792 * 100).toFixed(2)}% c)`;
-  }
+  if (fracEl) fracEl.textContent = `(${(v / 299792 * 100).toFixed(2)}% c)`;
+  const humanEl = document.getElementById('velocity-human');
+  if (humanEl) humanEl.textContent = `(${(v * 2236.94).toLocaleString('en', {maximumFractionDigits:0})} mph)`;
+}
+
+function setupModeToggle() {
+  const toggleBtns = document.querySelectorAll('#mode-toggle .toggle-btn');
+  toggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      toggleBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setMode(btn.dataset.mode);
+    });
+  });
+}
+
+function setMode(mode) {
+  easyMode = (mode === 'easy');
+  document.body.className = `mode-${mode}`;
+
+  // Update tab labels
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const label = easyMode ? btn.dataset.easy : btn.dataset.complex;
+    if (label) btn.textContent = label;
+  });
+
+  // Show/hide fun facts
+  const ff = document.getElementById('fun-facts');
+  if (ff) ff.style.display = easyMode ? 'block' : 'none';
+
+  // Trigger resize for any visible plots
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
 }

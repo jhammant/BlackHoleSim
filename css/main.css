@@ -196,6 +196,129 @@ html, body {
 .text-dim { color: var(--text-dim); }
 .text-secondary { color: var(--text-secondary); }
 
+/* Easy/Complex mode visibility */
+body.mode-easy .complex-only { display: none !important; }
+body.mode-complex .easy-only { display: none !important; }
+body.mode-easy #dashboard { display: none; }
+body.mode-easy #frame-label { display: none; }
+
+/* Intro splash */
+#intro-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: radial-gradient(ellipse at center, #0a0a2a 0%, #020208 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s;
+}
+#intro-splash.hidden { opacity: 0; pointer-events: none; }
+
+.splash-content {
+  text-align: center;
+  max-width: 600px;
+  padding: 40px;
+}
+
+.splash-title {
+  font-size: 64px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  margin-bottom: 8px;
+}
+
+.splash-subtitle {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+}
+
+.splash-facts {
+  text-align: left;
+  margin-bottom: 36px;
+}
+
+.splash-fact {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 15px;
+}
+
+.splash-fact .fact-num {
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 17px;
+}
+
+.splash-fact .fact-text {
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.splash-btn {
+  display: inline-block;
+  padding: 12px 48px;
+  font-size: 16px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--bg-deep);
+  background: var(--cyan);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.splash-btn:hover {
+  background: white;
+  transform: scale(1.05);
+}
+
+.splash-credit {
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Easy mode annotations */
+.easy-annotation {
+  background: rgba(5, 5, 16, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Fun facts bar */
+#fun-facts {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(5, 5, 16, 0.8);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--orange);
+  z-index: 5;
+  max-width: 260px;
+}
+
+/* Mode toggle in header */
+.mode-toggle {
+  vertical-align: middle;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   #app {
