@@ -36,17 +36,20 @@ export function updatePlanetView(params) {
 
 let autoAnimate = false;
 let autoStartTime = 0;
+let autoStartDist = 5000;
 
 export function animatePlanetView(time) {
   animTime = time;
   if (autoAnimate) {
     if (!autoStartTime) autoStartTime = time;
     const elapsed = (time - autoStartTime) * 0.001;
-    const t = Math.min(1, elapsed / 20);
-    const dist = 5000 * Math.pow(1 - t, 3);
+    const duration = Math.max(8, autoStartDist / 250); // scale duration to starting distance
+    const t = Math.min(1, elapsed / duration);
+    const dist = autoStartDist * Math.pow(1 - t, 3);
     currentParams.distance = Math.max(0.01, dist);
     const slider = document.querySelector('#planetview-sliders input[type="range"]');
     if (slider) slider.value = currentParams.distance;
+    if (t >= 1) autoAnimate = false;
   }
   draw();
 }
@@ -54,7 +57,7 @@ export function animatePlanetView(time) {
 export function startAutoApproach() {
   autoAnimate = true;
   autoStartTime = 0;
-  currentParams.distance = 5000;
+  autoStartDist = currentParams.distance; // start from current slider position
 }
 
 /* ---------- Sky generation ---------- */
@@ -613,9 +616,23 @@ function drawHorizon(w, h) {
   ctx.fill();
 }
 
+function formatCountdown(days) {
+  if (days > 365.25 * 1e6) return `${(days / (365.25 * 1e6)).toFixed(1)} million years`;
+  if (days > 365.25 * 1000) return `${(days / (365.25 * 1000)).toFixed(1)}k years`;
+  if (days > 365.25) {
+    const yr = Math.floor(days / 365.25);
+    const d = Math.floor(days % 365.25);
+    return yr > 10 ? `${yr.toLocaleString()} years` : `${yr}y ${d}d`;
+  }
+  if (days > 1) return `${Math.floor(days)} days`;
+  if (days > 1/24) return `${Math.floor(days * 24)} hours`;
+  return `${Math.floor(days * 24 * 60)} minutes`;
+}
+
 function drawInfo(w, h, dist, v, M_BH) {
   const dist_km = dist * 9.461e12;
   const time_s = dist_km / v;
+  const time_days = time_s / 86400;
   const time_yr = time_s / (365.25 * 86400);
 
   let timeStr;
@@ -626,6 +643,24 @@ function drawInfo(w, h, dist, v, M_BH) {
   const einsteinAngle = Math.sqrt(4 * 6.674e-11 * M_BH * 1.989e30 / (2.998e8 ** 2 * dist * 9.461e15));
   const einsteinAs = einsteinAngle * 206265;
 
+  // --- Big countdown timer (always visible, top-right) ---
+  const countdownText = dist < 0.5 ? 'IMPACT' : formatCountdown(time_days);
+  const countdownLabel = dist < 0.5 ? '' : 'TIME TO IMPACT';
+
+  ctx.textAlign = 'right';
+  if (dist >= 0.5) {
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#555570';
+    ctx.fillText(countdownLabel, w - 15, 26);
+  }
+  ctx.font = `bold ${dist < 50 ? 22 : 18}px "JetBrains Mono", monospace`;
+  // Color shifts from cyan → orange → red as it gets closer
+  if (dist > 500) ctx.fillStyle = '#00ccff';
+  else if (dist > 50) ctx.fillStyle = '#ff8844';
+  else ctx.fillStyle = '#ff4466';
+  ctx.fillText(countdownText, w - 15, dist >= 0.5 ? 44 : 35);
+
+  // --- Info panel (left side) ---
   const px = 15, py = 15;
   ctx.fillStyle = 'rgba(5,5,16,0.75)';
   ctx.fillRect(px, py, 200, 105);

@@ -26,6 +26,12 @@ let simFrames = null;
 let lastSimKey = '';
 let planetAngles = PLANETS.map(() => Math.random() * Math.PI * 2);
 
+// Animation state
+let animating = false;
+let animRAF = null;
+let animStart = 0;
+const ANIM_DURATION = 4000; // ms for full sweep
+
 export function initEncounterDiagram(canvasEl) {
   canvas = canvasEl;
   ctx = canvas.getContext('2d');
@@ -44,13 +50,58 @@ export function initEncounterDiagram(canvasEl) {
 }
 
 export function updateEncounterDiagram(newParams) {
+  const hadSimChange = newParams.mass !== undefined || newParams.velocity !== undefined
+    || newParams.closestApproach !== undefined || newParams.mode !== undefined;
   Object.assign(params, newParams);
   const key = `${params.mass}_${params.velocity}_${params.closestApproach}_${params.mode}`;
   if (key !== lastSimKey) {
     runSim();
     lastSimKey = key;
   }
+  // Auto-play animation when physics params change (not timeline scrub)
+  if (hadSimChange && newParams.timeline === undefined) {
+    playAnimation();
+  } else {
+    draw();
+  }
+}
+
+/** Start auto-play sweep from t=0 to t=1 */
+export function playAnimation() {
+  animating = true;
+  animStart = performance.now();
+  params.timeline = 0;
+  if (animRAF) cancelAnimationFrame(animRAF);
+  animTick();
+}
+
+function animTick() {
+  if (!animating) return;
+  const elapsed = performance.now() - animStart;
+  // Ease-in-out for smooth feel
+  let raw = Math.min(1, elapsed / ANIM_DURATION);
+  const t = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+  params.timeline = t;
   draw();
+  // Sync the timeline slider in the DOM
+  const tlSlider = document.getElementById('timeline-slider');
+  const tlValue = document.getElementById('timeline-value');
+  if (tlSlider) tlSlider.value = t;
+  if (tlValue) {
+    const phases = ['Approach', 'Disruption', 'Closest', 'Slingshot', 'Aftermath'];
+    tlValue.textContent = phases[Math.min(4, Math.floor(t * 5))];
+  }
+  if (raw < 1) {
+    animRAF = requestAnimationFrame(animTick);
+  } else {
+    animating = false;
+  }
+}
+
+/** Stop auto-play (e.g. when user grabs timeline slider) */
+export function stopAnimation() {
+  animating = false;
+  if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
 }
 
 function resize() {

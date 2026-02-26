@@ -12,6 +12,13 @@ let container;
 let animationCallbacks = [];
 let gridMesh;
 
+// Camera fly-in intro
+let introActive = true;
+let introStartTime = 0;
+const INTRO_DURATION = 3000;
+const INTRO_FROM = { x: 25, y: 12, z: 30 };
+const INTRO_TO = { x: 8, y: 5, z: 12 };
+
 export function getScene() { return scene; }
 export function getCamera() { return camera; }
 export function getRenderer() { return renderer; }
@@ -46,9 +53,9 @@ export function initScene(containerEl) {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x030308);
 
-  // Camera
+  // Camera — starts at intro position, flies in to default
   camera = new THREE.PerspectiveCamera(50, w / h, 0.01, 500);
-  camera.position.set(8, 5, 12);
+  camera.position.set(INTRO_FROM.x, INTRO_FROM.y, INTRO_FROM.z);
   camera.lookAt(0, 0, 0);
 
   // Renderer
@@ -70,6 +77,7 @@ export function initScene(containerEl) {
   controls.minDistance = 1;
   controls.maxDistance = 50;
   controls.target.set(0, 0, 0);
+  controls.enabled = false; // Disabled during intro fly-in
   controls.update();
 
   // Lighting
@@ -232,6 +240,26 @@ export function getParticleSprite() {
 
 export function animate(time) {
   requestAnimationFrame(animate);
+
+  // Camera fly-in intro
+  if (introActive) {
+    if (!introStartTime) introStartTime = time;
+    const elapsed = time - introStartTime;
+    let t = Math.min(1, elapsed / INTRO_DURATION);
+    // Ease-in-out cubic
+    t = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    camera.position.set(
+      INTRO_FROM.x + (INTRO_TO.x - INTRO_FROM.x) * t,
+      INTRO_FROM.y + (INTRO_TO.y - INTRO_FROM.y) * t,
+      INTRO_FROM.z + (INTRO_TO.z - INTRO_FROM.z) * t,
+    );
+    camera.lookAt(0, 0, 0);
+    if (elapsed >= INTRO_DURATION) {
+      introActive = false;
+      controls.enabled = true;
+    }
+  }
+
   controls.update();
 
   for (const cb of animationCallbacks) {

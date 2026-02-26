@@ -51,13 +51,21 @@ export function createSlider(config) {
   const easyFormatVal = config.easyFormat || formatVal;
   valueDisplay.textContent = formatVal(config.value);
 
+  const updateFill = () => {
+    const pct = ((parseFloat(input.value) - config.min) / (config.max - config.min)) * 100;
+    input.style.setProperty('--fill-pct', pct + '%');
+  };
+
   input.addEventListener('input', () => {
     const val = parseFloat(input.value);
-    // Use appropriate formatter based on current mode
+    updateFill();
     const isEasy = document.body.classList.contains('mode-easy');
     valueDisplay.textContent = (isEasy ? easyFormatVal : formatVal)(val);
     if (config.onChange) config.onChange(config.param, val);
   });
+
+  // Set initial fill
+  updateFill();
 
   row.appendChild(label);
   row.appendChild(input);

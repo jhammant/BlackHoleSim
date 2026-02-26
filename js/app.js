@@ -11,7 +11,7 @@ import { initPVDiagram, updatePVDiagram } from './plots/pv-diagram.js';
 import { initWakeProfile, updateWakeProfile } from './plots/wake-profile.js';
 import { initSchematic, updateSchematic, animateSchematic } from './plots/schematic.js';
 import { initPlanetView, updatePlanetView, animatePlanetView, startAutoApproach } from './plots/planetview.js';
-import { initEncounterDiagram, updateEncounterDiagram } from './plots/encounter-diagram.js';
+import { initEncounterDiagram, updateEncounterDiagram, stopAnimation } from './plots/encounter-diagram.js';
 import { createSliderGroup, PV_SLIDERS, WAKE_SLIDERS, ENCOUNTER_SLIDERS } from './ui/sliders.js';
 import { initDashboard, updateDashboard } from './ui/dashboard.js';
 import { initTabs } from './ui/tabs.js';
@@ -130,11 +130,15 @@ export async function init() {
     });
   }
 
-  // Fun facts rotation
+  // Fun facts rotation with crossfade
   setInterval(() => {
     const el = document.getElementById('fun-fact-text');
     if (el && easyMode) {
-      el.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+      el.classList.add('fading');
+      setTimeout(() => {
+        el.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+        el.classList.remove('fading');
+      }, 400);
     }
   }, 5000);
 
@@ -197,6 +201,12 @@ function setupSliders() {
       state[param] = value;
       if (param === 'R_c') {
         state.R_0 = standoffFromRc(value);
+      }
+      if (param === 'v_star') {
+        setParticleParams({ v_star: value });
+        updateVelocityReadout(value);
+        updatePVDiagram(state);
+        updateWakeProfile(state);
       }
       updateSchematic(state);
       updateDashboard(state);
@@ -265,6 +275,7 @@ function setupSliders() {
     const tlSlider = document.getElementById('timeline-slider');
     const tlValue = document.getElementById('timeline-value');
     tlSlider.addEventListener('input', () => {
+      stopAnimation(); // Stop auto-play when user scrubs manually
       const v = parseFloat(tlSlider.value);
       setEncounterParams({ timeline: v });
       updateEncounterDiagram({ timeline: v });

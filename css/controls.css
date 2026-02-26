@@ -21,10 +21,17 @@
   height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--border-mid);
+  background: linear-gradient(
+    to right,
+    var(--cyan) 0%,
+    var(--cyan) var(--fill-pct, 50%),
+    var(--border-mid) var(--fill-pct, 50%),
+    var(--border-mid) 100%
+  );
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  transition: background 0.1s;
 }
 
 .slider-row input[type="range"]::-webkit-slider-thumb {
@@ -108,6 +115,10 @@
 .toggle-btn:hover:not(.active) {
   background: var(--bg-elevated);
   color: var(--text-secondary);
+}
+
+.toggle-btn:active {
+  transform: scale(0.95);
 }
 
 /* Checkbox toggle */

@@ -300,6 +300,68 @@ body.mode-complex #easy-dashboard { display: none !important; }
   color: var(--text-dim);
 }
 
+/* Splash entrance animations */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 204, 255, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(0, 204, 255, 0.6), 0 0 80px rgba(0, 204, 255, 0.15); }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.8; }
+}
+
+.splash-title,
+.splash-subtitle,
+.splash-tagline,
+.splash-fact,
+.splash-buttons,
+.splash-credit {
+  opacity: 0;
+  animation: fadeSlideUp 0.6s ease-out forwards;
+}
+
+.splash-title { animation-delay: 0.1s; }
+.splash-subtitle { animation-delay: 0.3s; }
+.splash-tagline { animation-delay: 0.5s; }
+.splash-fact:nth-child(1) { animation-delay: 0.8s; }
+.splash-fact:nth-child(2) { animation-delay: 1.0s; }
+.splash-fact:nth-child(3) { animation-delay: 1.2s; }
+.splash-fact:nth-child(4) { animation-delay: 1.4s; }
+.splash-buttons { animation-delay: 1.8s; }
+.splash-credit { animation-delay: 2.0s; }
+
+.splash-btn {
+  box-shadow: 0 0 20px rgba(0, 204, 255, 0.3);
+  animation: pulseGlow 2s ease-in-out 2.4s infinite;
+}
+
+#intro-splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 40% 12%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 55% 68%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 60% 25%, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 5% 45%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 78% 58%, rgba(255,255,255,0.2), transparent);
+  animation: twinkle 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
 /* Easy mode annotations */
 .easy-annotation {
   background: rgba(5, 5, 16, 0.85);
@@ -328,6 +390,14 @@ body.mode-complex #easy-dashboard { display: none !important; }
   color: var(--orange);
   z-index: 5;
   max-width: 260px;
+}
+
+#fun-facts .fun-fact {
+  transition: opacity 0.4s ease-in-out;
+}
+
+#fun-facts .fun-fact.fading {
+  opacity: 0;
 }
 
 /* Mode toggle in header */
