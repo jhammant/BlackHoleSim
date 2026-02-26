@@ -115,26 +115,43 @@ function resize() {
 /* ---------- Simulation ---------- */
 
 function runSim() {
-  const STEPS = 300;
+  const STEPS = 600;
   const isDirect = params.mode === 'direct';
   const dMin = isDirect ? 0 : params.closestApproach;
-  const M = params.mass;
-  const BH_RANGE_AU = 80; // BH travels ±80 AU through the scene
+  const M_bh_solar = params.mass; // mass in solar masses
+  const v_kms = params.velocity;
+  const BH_RANGE_AU = 80;
 
-  // Initialize planet states (AU coordinates, top-down)
-  const pStates = PLANETS.map((p, i) => ({
-    x: Math.cos(planetAngles[i]) * p.au,
-    y: Math.sin(planetAngles[i]) * p.au,
-    vx: 0, vy: 0,
-    au: p.au,
-    disrupted: false,
-  }));
+  // Unit system: AU, years. GM_sun = 4π² AU³/yr²
+  const GM_sun = 4 * Math.PI * Math.PI; // ~39.48
+  const GM_bh = GM_sun * M_bh_solar;
+
+  // BH speed in AU/yr (1 AU/yr ≈ 4.74 km/s)
+  const v_au_yr = v_kms / 4.74;
+  const totalDist = 2 * BH_RANGE_AU;
+  const totalTime = totalDist / v_au_yr; // years
+  const dt = totalTime / STEPS;
+
+  // Initialize planets with proper Keplerian circular orbits
+  const pStates = PLANETS.map((p, i) => {
+    const angle = planetAngles[i];
+    const r = p.au;
+    // Circular orbital speed: v = sqrt(GM_sun / r)
+    const vorb = Math.sqrt(GM_sun / r);
+    return {
+      x: Math.cos(angle) * r,
+      y: Math.sin(angle) * r,
+      vx: -Math.sin(angle) * vorb,
+      vy:  Math.cos(angle) * vorb,
+      au: r,
+      disrupted: false,
+    };
+  });
 
   simFrames = [];
 
   for (let step = 0; step <= STEPS; step++) {
     const t = step / STEPS;
-    // BH moves along Y axis (top to bottom), offset by closestApproach on X
     const bhX = dMin;
     const bhY = (t - 0.5) * 2 * BH_RANGE_AU;
 
@@ -143,42 +160,32 @@ function runSim() {
       planets: pStates.map(p => ({ x: p.x, y: p.y, disrupted: p.disrupted })),
     });
 
-    // Physics: BH gravity pull on each planet
-    const dt = 1 / STEPS;
+    // Semi-implicit Euler (symplectic — preserves orbits)
+    // Update velocity first, then position
     for (const p of pStates) {
+      // Sun's gravity: a = -GM_sun * r / |r|³
+      const sr2 = p.x * p.x + p.y * p.y;
+      const sr = Math.sqrt(sr2) || 0.01;
+      const sunA = GM_sun / sr2;
+      p.vx -= (p.x / sr) * sunA * dt;
+      p.vy -= (p.y / sr) * sunA * dt;
+
+      // BH gravity
       const dx = bhX - p.x;
       const dy = bhY - p.y;
       const dist2 = dx * dx + dy * dy;
       const dist = Math.sqrt(dist2) || 0.01;
+      // Softened slightly to avoid numerical blowup at very close approach
+      const bhA = GM_bh / (dist2 + 1);
+      p.vx += (dx / dist) * bhA * dt;
+      p.vy += (dy / dist) * bhA * dt;
 
-      // Gravitational acceleration scaled for AU coordinates
-      // Stronger effect = more dramatic ejection
-      const accel = M * 3e-7 / (dist2 + 0.5) * dt;
+      // Mark disrupted when BH pull dominates Sun's pull
+      if (bhA > sunA * 0.3) p.disrupted = true;
 
-      if (dist < 200) {
-        p.vx += (dx / dist) * accel;
-        p.vy += (dy / dist) * accel;
-        if (accel > 0.003) p.disrupted = true;
-      }
-
-      // Solar restoring force (for undisrupted planets)
-      if (!p.disrupted) {
-        const sr = Math.sqrt(p.x * p.x + p.y * p.y) || 0.01;
-        const orbSpeed = 0.005 / Math.sqrt(Math.max(p.au, 0.3));
-        // Tangential orbit
-        p.vx += (-p.y / sr) * orbSpeed;
-        p.vy += (p.x / sr) * orbSpeed;
-        // Radial restoring
-        const radial = (sr - p.au) * 0.03 * dt;
-        p.vx -= (p.x / sr) * radial;
-        p.vy -= (p.y / sr) * radial;
-        // Damping
-        p.vx *= 0.96;
-        p.vy *= 0.96;
-      }
-
-      p.x += p.vx;
-      p.y += p.vy;
+      // Update position with new velocity (symplectic step)
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
     }
   }
 }
